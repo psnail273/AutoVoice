@@ -1,0 +1,157 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Mid-Century Modern Theme
+   Inspired by 1950s-60s design: warm creams, mustard gold, 
+   teal, olive, burnt orange, and rich wood tones */
+
+:root {
+  --radius: 0.5rem;
+  /* Warm cream background */
+  --background: oklch(0.97 0.015 85);
+  /* Rich walnut brown text */
+  --foreground: oklch(0.28 0.045 55);
+  /* Warm ivory card */
+  --card: oklch(0.98 0.012 80);
+  --card-foreground: oklch(0.28 0.045 55);
+  /* Cream popover */
+  --popover: oklch(0.98 0.012 80);
+  --popover-foreground: oklch(0.28 0.045 55);
+  /* Mustard gold primary */
+  --primary: oklch(0.72 0.155 80);
+  --primary-foreground: oklch(0.25 0.04 55);
+  /* Olive green secondary */
+  --secondary: oklch(0.58 0.09 135);
+  --secondary-foreground: oklch(0.97 0.015 85);
+  /* Warm tan muted */
+  --muted: oklch(0.92 0.025 75);
+  --muted-foreground: oklch(0.48 0.05 60);
+  /* Teal accent */
+  --accent: oklch(0.58 0.115 195);
+  --accent-foreground: oklch(0.97 0.015 85);
+  /* Terracotta destructive */
+  --destructive: oklch(0.55 0.175 32);
+  /* Warm taupe border */
+  --border: oklch(0.85 0.03 70);
+  --input: oklch(0.88 0.025 75);
+  /* Burnt orange ring */
+  --ring: oklch(0.62 0.165 50);
+  /* MCM-inspired chart colors */
+  --chart-1: oklch(0.72 0.155 80);  /* Mustard */
+  --chart-2: oklch(0.58 0.115 195); /* Teal */
+  --chart-3: oklch(0.58 0.09 135);  /* Olive */
+  --chart-4: oklch(0.62 0.165 50);  /* Burnt orange */
+  --chart-5: oklch(0.55 0.175 32);  /* Terracotta */
+  /* Warm cream sidebar */
+  --sidebar: oklch(0.95 0.02 80);
+  --sidebar-foreground: oklch(0.28 0.045 55);
+  --sidebar-primary: oklch(0.72 0.155 80);
+  --sidebar-primary-foreground: oklch(0.25 0.04 55);
+  --sidebar-accent: oklch(0.58 0.115 195);
+  --sidebar-accent-foreground: oklch(0.97 0.015 85);
+  --sidebar-border: oklch(0.85 0.03 70);
+  --sidebar-ring: oklch(0.62 0.165 50);
+}
+
+.dark {
+  /* Deep walnut background */
+  --background: oklch(0.22 0.035 55);
+  /* Warm cream foreground */
+  --foreground: oklch(0.94 0.02 80);
+  /* Rich brown card */
+  --card: oklch(0.28 0.04 55);
+  --card-foreground: oklch(0.94 0.02 80);
+  /* Warm brown popover */
+  --popover: oklch(0.28 0.04 55);
+  --popover-foreground: oklch(0.94 0.02 80);
+  /* Bright mustard primary */
+  --primary: oklch(0.78 0.16 82);
+  --primary-foreground: oklch(0.22 0.035 55);
+  /* Muted olive secondary */
+  --secondary: oklch(0.45 0.07 135);
+  --secondary-foreground: oklch(0.94 0.02 80);
+  /* Deep warm brown muted */
+  --muted: oklch(0.32 0.04 55);
+  --muted-foreground: oklch(0.68 0.04 70);
+  /* Vibrant teal accent */
+  --accent: oklch(0.62 0.13 195);
+  --accent-foreground: oklch(0.94 0.02 80);
+  /* Bright terracotta destructive */
+  --destructive: oklch(0.62 0.18 32);
+  /* Warm subtle border */
+  --border: oklch(0.94 0.02 80 / 12%);
+  --input: oklch(0.94 0.02 80 / 18%);
+  /* Warm gold ring */
+  --ring: oklch(0.68 0.15 75);
+  /* Dark MCM chart colors */
+  --chart-1: oklch(0.78 0.16 82);   /* Bright mustard */
+  --chart-2: oklch(0.62 0.13 195);  /* Bright teal */
+  --chart-3: oklch(0.55 0.10 135);  /* Olive */
+  --chart-4: oklch(0.68 0.17 50);   /* Burnt orange */
+  --chart-5: oklch(0.62 0.18 32);   /* Terracotta */
+  /* Dark wood sidebar */
+  --sidebar: oklch(0.25 0.038 55);
+  --sidebar-foreground: oklch(0.94 0.02 80);
+  --sidebar-primary: oklch(0.78 0.16 82);
+  --sidebar-primary-foreground: oklch(0.22 0.035 55);
+  --sidebar-accent: oklch(0.62 0.13 195);
+  --sidebar-accent-foreground: oklch(0.94 0.02 80);
+  --sidebar-border: oklch(0.94 0.02 80 / 12%);
+  --sidebar-ring: oklch(0.68 0.15 75);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+html,
+body,
+#root {
+  display: flex;
+  min-width: 700px;
+  min-height: 600px;
+}
+
+

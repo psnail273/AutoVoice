@@ -1,10 +1,14 @@
 {
   "folders": [
     {
+      "name": "rules",
+      "path": ".cursor/rules"
+    },
+    {
       "name": "backend",
       "path": "backend"
     },
-    {`
+    {
       "name": "frontend",
       "path": "frontend"
     }

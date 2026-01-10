@@ -1,0 +1,35 @@
+---
+description: General coding guidelines for the AutoVoice project
+alwaysApply: true
+---
+
+# General Guidelines
+
+## Code Quality
+- Write clear, readable code with meaningful variable and function names
+- Keep functions focused and single-purpose
+- Add comments only when the "why" isn't obvious from the code
+- Prefer explicit over implicit behavior
+- Add docstrings to each function
+
+## Git & Commits
+- Write descriptive commit messages
+- Keep commits atomic and focused
+
+## Documentation
+- Document public APIs and complex logic
+- Keep README files up to date when adding new features
+
+## Error Handling
+- Handle errors gracefully with meaningful messages
+- Log errors appropriately for debugging
+
+## Security
+- Always consider security implications when making any change
+- Never hardcode secrets, API keys, or credentials - use environment variables
+- Sanitize and validate all user input before processing
+- Use parameterized queries to prevent SQL injection
+- Avoid exposing sensitive information in error messages or logs
+- Apply principle of least privilege for permissions and access
+- Keep dependencies updated to patch known vulnerabilities
+- Review code changes for potential security issues before committing

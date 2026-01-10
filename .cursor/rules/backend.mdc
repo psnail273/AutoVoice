@@ -1,0 +1,73 @@
+---
+description: Backend development rules for Python/FastAPI
+globs: backend/**/*
+---
+
+# Backend Guidelines (FastAPI + Python)
+
+## Framework & Structure
+- Use FastAPI for all API endpoints
+- Use Pydantic models for request/response validation
+- Organize routes in separate router files under `src/routers/`
+- Register routers in `main.py` with appropriate prefixes and tags
+
+## Python Style
+- Follow PEP 8 conventions
+- Use type hints for function parameters and return values
+- Use `async def` for endpoint handlers
+- Prefer f-strings for string formatting
+
+## API Design
+- Use appropriate HTTP methods (GET, POST, PUT, DELETE)
+- Return proper status codes
+- Use `Response` or `StreamingResponse` for binary data (audio, files)
+- Group related endpoints with router tags
+
+## Pydantic Models
+- Define request bodies as Pydantic `BaseModel` classes
+- Use descriptive field names
+- Add validation where appropriate
+
+## Database (Neon Postgres)
+- Use SQLAlchemy 2.0 async with `asyncpg` driver
+- Connection string is in `DATABASE_URL` environment variable
+- Use `Depends()` to inject database sessions into endpoints
+- Use async session context managers for transaction safety
+- Define models in `src/models/` directory
+- Use Alembic for migrations
+
+### Database Session Pattern
+```python
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from fastapi import Depends
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+# Convert postgres:// to postgresql+asyncpg:// for async driver
+engine = create_async_engine(DATABASE_URL.replace("postgres://", "postgresql+asyncpg://"))
+AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
+
+@router.get("/items")
+async def get_items(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Item))
+    return result.scalars().all()
+```
+
+## Example Pattern
+```python
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class MyRequest(BaseModel):
+    field: str
+
+@router.post("/endpoint")
+async def my_endpoint(request: MyRequest):
+    # Implementation
+    pass
+```

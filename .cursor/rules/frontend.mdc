@@ -1,0 +1,57 @@
+---
+description: Frontend development rules for WXT browser extension with React
+globs: frontend/**/*
+---
+
+# Frontend Guidelines (WXT + React + TypeScript + Tailwind)
+
+## Framework & Structure
+- This is a WXT browser extension project
+- Use React 19 with functional components and hooks
+- Write all components in TypeScript (`.tsx`)
+- Use Tailwind CSS v4 for styling
+
+## Component Patterns
+- Use functional components with hooks
+- Keep components small and focused
+- Extract reusable logic into custom hooks
+- Co-locate component styles and tests
+
+## TypeScript
+- Define explicit types for props and state
+- Avoid `any` - use proper types
+- Use interfaces for object shapes, types for unions/primitives
+
+## Styling with Tailwind
+- Use Tailwind utility classes directly in JSX
+- Only add the tailwind classes necessary - keep it simple
+- Use `cn()` helper (clsx + tailwind-merge) for conditional classes
+- Follow the project's shadcn/ui patterns for components
+
+## shadcn/ui Components
+- Use existing Radix UI primitives from the project
+- Follow shadcn/ui patterns for new components
+- Import from `@/components/ui/`
+
+## WXT Extension Specifics
+- Place entry points in appropriate WXT directories
+- Use WXT's built-in APIs for extension functionality
+- Handle browser API differences appropriately
+
+## Example Component
+```tsx
+import { cn } from "@/lib/utils"
+
+interface MyComponentProps {
+  title: string
+  className?: string
+}
+
+export function MyComponent({ title, className }: MyComponentProps) {
+  return (
+    <div className={cn("p-4 rounded-lg", className)}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+    </div>
+  )
+}
+```
