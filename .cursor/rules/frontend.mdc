@@ -36,7 +36,10 @@ globs: frontend/**/*
 ## WXT Extension Specifics
 - Place entry points in appropriate WXT directories
 - Use WXT's built-in APIs for extension functionality
-- Handle browser API differences appropriately
+- **Browser-Agnostic**: Use `browser.*` API (WebExtensions standard), NOT `chrome.*`
+- WXT automatically polyfills `browser.*` for all supported browsers (Chrome, Firefox, Edge, Safari)
+- For storage, use `browser.storage.local` instead of `chrome.storage.local`
+- Import browser APIs from `wxt/browser` when type hints are needed
 
 ## Example Component
 ```tsx
