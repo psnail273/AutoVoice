@@ -150,8 +150,12 @@ html,
 body,
 #root {
   display: flex;
-  min-width: 700px;
-  min-height: 600px;
+  flex-direction: column;
+  min-width: 380px;
+  width: fit-content;
+  height: fit-content;
+  max-height: 600px;
+  overflow: auto;
 }
 
 

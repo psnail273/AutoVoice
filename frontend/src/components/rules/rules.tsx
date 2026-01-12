@@ -10,7 +10,7 @@ export default function Rules() {
     <>
       {
         audio.hasAudio && (
-          <Card className="min-w-xs">
+          <Card className="w-full">
             <CardHeader>
               <CardTitle>Active Rule</CardTitle>
               <CardDescription>{ audio.website }</CardDescription>

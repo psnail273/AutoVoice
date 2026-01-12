@@ -16,7 +16,7 @@ function AppContent() {
   // Show loading state while checking initial auth status
   if (isLoading.initial) {
     return (
-      <div className="flex items-center justify-center h-full w-full">
+      <div className="flex items-center justify-center w-full py-16">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-muted-foreground text-sm">Loading...</p>
@@ -35,7 +35,7 @@ function AppContent() {
 
   // Show main app when logged in
   return (
-    <div className="h-full w-full flex flex-col">
+    <div className="w-full flex flex-col ">
       { /* User header bar */ }
       <div className="flex items-center justify-between px-4 py-2 border-b bg-card/50">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -54,7 +54,7 @@ function AppContent() {
       </div>
 
       { /* Main content */ }
-      <div className="flex-1">
+      <div className="flex-1 ">
         <AudioProvider>
           <NavMenu />
         </AudioProvider>

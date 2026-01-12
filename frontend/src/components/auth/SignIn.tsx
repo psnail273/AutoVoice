@@ -35,15 +35,14 @@ export function SignIn({ onSwitchToSignUp }: SignInProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-full w-full p-8 bg-gradient-to-br from-background via-background to-muted/30">
+    <div className="relative flex flex-col items-center justify-center w-full p-6 bg-gradient-to-br from-background via-background to-muted/30">
       { /* Decorative elements */ }
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-40 h-40 rounded-full bg-accent/10 blur-3xl" />
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 rounded-full bg-secondary/10 blur-2xl" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-4 left-4 w-24 h-24 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-4 right-4 w-28 h-28 rounded-full bg-accent/10 blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md relative z-10 border-2 shadow-lg">
+      <Card className="w-full relative z-10 border-2 shadow-lg">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
             <Mic2 className="w-8 h-8 text-primary-foreground" />

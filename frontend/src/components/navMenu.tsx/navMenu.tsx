@@ -11,8 +11,8 @@ export default function NavMenu() {
         <TabsTrigger className="" value="rules">Rules</TabsTrigger>
         <TabsTrigger className="" value="options">Options</TabsTrigger>
       </TabsList>
-      <TabsContent className="flex justify-center items-center" value="playback"><Playback /></TabsContent>
-      <TabsContent className="flex justify-center items-center" value="rules"><Rules /></TabsContent>
-      <TabsContent className="flex justify-center items-center" value="options"><Options /></TabsContent>
+      <TabsContent className="flex pb-3 px-3 w-full" value="playback"><Playback /></TabsContent>
+      <TabsContent className="flex pb-3 px-3 w-full" value="rules"><Rules /></TabsContent>
+      <TabsContent className="flex pb-3 px-3 w-full" value="options"><Options /></TabsContent>
     </Tabs>);
 }

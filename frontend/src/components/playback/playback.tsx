@@ -57,7 +57,7 @@ export default function Playback() {
       { audio.audioUrl && (
         <audio ref={ audioRef } src={ audio.audioUrl } />
       ) }
-      <Card className="min-w-xs">
+      <Card className="w-full">
         { audio.hasAudio && (
           <CardHeader>
             <CardTitle>{ audio.website }</CardTitle>
@@ -71,7 +71,7 @@ export default function Playback() {
             <Progress value={ audio.audioDuration > 0 ? (audio.audioTime / audio.audioDuration) * 100 : 0 } />
             <div>{ audio.audioDuration.toFixed(2) }</div>
           </div>
-          <div className="flex flex-row p-4">
+          <div className="flex flex-row p-4 justify-center">
             <ButtonGroup rounded="full">
               <Button variant="outline" disabled={ !audio.hasAudio } onClick={ handleRestart }><UndoDot /></Button>
               <Button variant="outline" disabled={ !audio.hasAudio } onClick={ stop }><SkipBack fill="currentColor" /></Button>
