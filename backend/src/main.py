@@ -3,10 +3,14 @@ Main FastAPI application entry point.
 """
 
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from src.tts.kokoro.utils import text_to_wav, stream_audio_chunks
 from src.routers import auth, rules
@@ -15,11 +19,36 @@ from src.config import settings
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 os.environ["DISPLAY"] = ""
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for startup and shutdown."""
+    # Startup: Validate critical configuration
+    if settings.SECRET_KEY == "CHANGE_ME_IN_PRODUCTION_USE_STRONG_SECRET":
+        raise ValueError(
+            "SECRET_KEY must be set to a secure value in production. "
+            "Generate one with: openssl rand -hex 32"
+        )
+    if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
+        raise ValueError(
+            "SECRET_KEY must be at least 32 characters for security. "
+            "Current length: " + str(len(settings.SECRET_KEY))
+        )
+    yield
+    # Shutdown: cleanup code would go here
+
+
 app = FastAPI(
     title="AutoVoice API",
     description="Text-to-speech API with user authentication and rules management",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
+
+# Configure rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS
 app.add_middleware(

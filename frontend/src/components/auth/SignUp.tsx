@@ -5,6 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { Mic2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import zxcvbn from 'zxcvbn';
 
 interface SignUpProps {
   onSwitchToSignIn: () => void;
@@ -19,8 +21,20 @@ export function SignUp({ onSwitchToSignIn }: SignUpProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const pwd = e.target.value;
+    setPassword(pwd);
+    if (pwd) {
+      const result = zxcvbn(pwd);
+      setPasswordStrength(result.score);
+    } else {
+      setPasswordStrength(0);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -128,15 +142,40 @@ export function SignUp({ onSwitchToSignIn }: SignUpProps) {
                 type="password"
                 placeholder="Create a password"
                 value={ password }
-                onChange={ (e) => setPassword(e.target.value) }
+                onChange={ handlePasswordChange }
                 required
                 disabled={ isLoading }
                 autoComplete="new-password"
                 minLength={ 8 }
               />
-              <p className="text-xs text-muted-foreground">
-                At least 8 characters
-              </p>
+              { password && (
+                <div className="mt-2">
+                  <div className="flex gap-1">
+                    { [0, 1, 2, 3, 4].map((level) => (
+                      <div
+                        key={ level }
+                        className={ cn(
+                          'h-1 flex-1 rounded transition-colors duration-300',
+                          level <= passwordStrength
+                            ? passwordStrength < 2
+                              ? 'bg-red-500'
+                              : passwordStrength < 4
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                            : 'bg-gray-300 dark:bg-gray-600'
+                        ) }
+                      />
+                    )) }
+                  </div>
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    { passwordStrength === 0 && 'Very weak password' }
+                    { passwordStrength === 1 && 'Weak password' }
+                    { passwordStrength === 2 && 'Fair password' }
+                    { passwordStrength === 3 && 'Good password' }
+                    { passwordStrength === 4 && 'Strong password' }
+                  </p>
+                </div>
+              ) }
             </div>
 
             <div className="space-y-2">

@@ -8,9 +8,15 @@ import {
   type UserResponse 
 } from '@/lib/api';
 
+interface LoadingState {
+  initial: boolean;
+  refreshing: boolean;
+  authenticating: boolean;
+}
+
 interface AuthContextType {
   user: UserResponse | null;
-  isLoading: boolean;
+  isLoading: LoadingState;
   isLoggedIn: boolean;
   login: (username: string, password: string) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
@@ -29,9 +35,14 @@ interface AuthProviderProps {
  */
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<UserResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<LoadingState>({
+    initial: true,
+    refreshing: false,
+    authenticating: false,
+  });
 
   const refreshUser = useCallback(async () => {
+    setIsLoading(prev => ({ ...prev, refreshing: true }));
     try {
       const authenticated = await isAuthenticated();
       if (authenticated) {
@@ -40,29 +51,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setUser(null);
       }
-    } catch {
+    } catch (error) {
+      console.error('[Auth] Error in refreshUser:', error);
+      if (import.meta.env.DEV) {
+        console.debug('[Auth] Full error details:', error);
+      }
       setUser(null);
+    } finally {
+      setIsLoading(prev => ({ ...prev, refreshing: false }));
     }
   }, []);
 
   // Check auth status on mount
   useEffect(() => {
     const checkAuth = async () => {
-      setIsLoading(true);
+      setIsLoading(prev => ({ ...prev, initial: true }));
       await refreshUser();
-      setIsLoading(false);
+      setIsLoading(prev => ({ ...prev, initial: false }));
     };
     checkAuth();
   }, [refreshUser]);
 
   const login = useCallback(async (username: string, password: string) => {
-    await apiLogin(username, password);
-    await refreshUser();
+    setIsLoading(prev => ({ ...prev, authenticating: true }));
+    try {
+      await apiLogin(username, password);
+      await refreshUser();
+    } finally {
+      setIsLoading(prev => ({ ...prev, authenticating: false }));
+    }
   }, [refreshUser]);
 
   const signup = useCallback(async (username: string, email: string, password: string) => {
-    await apiSignup(username, email, password);
-    await refreshUser();
+    setIsLoading(prev => ({ ...prev, authenticating: true }));
+    try {
+      await apiSignup(username, email, password);
+      await refreshUser();
+    } finally {
+      setIsLoading(prev => ({ ...prev, authenticating: false }));
+    }
   }, [refreshUser]);
 
   const logout = useCallback(async () => {

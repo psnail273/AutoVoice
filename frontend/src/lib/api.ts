@@ -4,7 +4,11 @@
 
 import { browser } from 'wxt/browser';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+// Authentication validation cache
+let authValidationCache: { isValid: boolean; timestamp: number } | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 interface ApiError {
   detail: string;
@@ -52,15 +56,25 @@ interface RuleUpdate {
 }
 
 /**
+ * Type guard to validate storage result structure.
+ */
+function isStorageResult(obj: unknown): obj is { authToken?: string } {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+/**
  * Get the stored auth token from browser.storage.local.
  * Uses the WebExtensions API (browser-agnostic).
  */
 async function getToken(): Promise<string | null> {
   try {
-    const result = await browser.storage.local.get('authToken') as { authToken?: string };
-    return result.authToken || null;
-  } catch {
-    // Fallback for non-extension context (development)
+    const result = await browser.storage.local.get('authToken');
+    if (isStorageResult(result)) {
+      return result.authToken || null;
+    }
+    return null;
+  } catch (error) {
+    console.warn('[API] Failed to access browser.storage, falling back to localStorage:', error);
     return localStorage.getItem('authToken');
   }
 }
@@ -72,8 +86,8 @@ async function getToken(): Promise<string | null> {
 async function setToken(token: string): Promise<void> {
   try {
     await browser.storage.local.set({ authToken: token });
-  } catch {
-    // Fallback for non-extension context (development)
+  } catch (error) {
+    console.warn('[API] Failed to access browser.storage, falling back to localStorage:', error);
     localStorage.setItem('authToken', token);
   }
 }
@@ -85,9 +99,15 @@ async function setToken(token: string): Promise<void> {
 async function removeToken(): Promise<void> {
   try {
     await browser.storage.local.remove('authToken');
-  } catch {
-    // Fallback for non-extension context (development)
+  } catch (error) {
+    console.warn('[API] Failed to clear browser.storage:', error);
+  }
+
+  // Also clear localStorage in case it was used as fallback
+  try {
     localStorage.removeItem('authToken');
+  } catch (error) {
+    console.warn('[API] Failed to clear localStorage:', error);
   }
 }
 
@@ -99,21 +119,39 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = await getToken();
-  
-  const headers: HeadersInit = {
+
+  const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
   };
-  
+
+  // Merge in any headers from options
+  if (options.headers) {
+    const optionsHeaders = options.headers as Record<string, string>;
+    Object.assign(requestHeaders, optionsHeaders);
+  }
+
   if (token) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    requestHeaders['Authorization'] = `Bearer ${token}`;
   }
   
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
-    headers,
+    headers: requestHeaders,
   });
-  
+
+  // Handle 401 Unauthorized
+  if (response.status === 401) {
+    // For login/signup endpoints, let the backend error message through
+    const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/signup';
+
+    if (!isAuthEndpoint) {
+      // For other endpoints, 401 means expired/invalid token
+      await removeToken();
+      throw new Error('Authentication expired. Please log in again.');
+    }
+    // For auth endpoints, fall through to general error handling below
+  }
+
   if (!response.ok) {
     const error: ApiError = await response.json().catch(() => ({ detail: 'An error occurred' }));
     throw new Error(error.detail);
@@ -164,8 +202,10 @@ export async function login(
 
 /**
  * Log out the current user.
+ * Clears both token storage and auth validation cache.
  */
 export async function logout(): Promise<void> {
+  authValidationCache = null;
   await removeToken();
 }
 
@@ -178,15 +218,26 @@ export async function getCurrentUser(): Promise<UserResponse> {
 
 /**
  * Check if user is authenticated.
+ * Results are cached for 5 minutes to reduce unnecessary API calls.
  */
 export async function isAuthenticated(): Promise<boolean> {
   const token = await getToken();
-  if (!token) return false;
-  
+  if (!token) {
+    authValidationCache = null;
+    return false;
+  }
+
+  // Use cache if valid
+  if (authValidationCache && Date.now() - authValidationCache.timestamp < CACHE_DURATION) {
+    return authValidationCache.isValid;
+  }
+
   try {
     await getCurrentUser();
+    authValidationCache = { isValid: true, timestamp: Date.now() };
     return true;
   } catch {
+    authValidationCache = { isValid: false, timestamp: Date.now() };
     await removeToken();
     return false;
   }

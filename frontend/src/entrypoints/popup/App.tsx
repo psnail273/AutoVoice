@@ -13,8 +13,8 @@ function AppContent() {
   const { isLoading, isLoggedIn, user, logout } = useAuth();
   const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
 
-  // Show loading state while checking auth
-  if (isLoading) {
+  // Show loading state while checking initial auth status
+  if (isLoading.initial) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center gap-4">

@@ -20,7 +20,9 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours default
     
     # CORS (comma-separated list of allowed origins)
-    CORS_ORIGINS: list[str] = os.getenv("CORS_ORIGINS", "*").split(",")
+    # Default to localhost for development. Set explicitly in production.
+    _cors_origins_str: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000")
+    CORS_ORIGINS: list[str] = [origin.strip() for origin in _cors_origins_str.split(",")]
 
 
 settings = Settings()

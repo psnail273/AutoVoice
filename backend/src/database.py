@@ -29,10 +29,11 @@ elif DATABASE_URL.startswith("postgresql://"):
 parsed = urlparse(DATABASE_URL)
 clean_url = urlunparse(parsed._replace(query=""))
 
-# Create SSL context for Neon (requires SSL)
+# Create SSL context for Neon (requires SSL with certificate verification)
 ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
+ssl_context.check_hostname = True
+ssl_context.verify_mode = ssl.CERT_REQUIRED
+# Neon uses standard CA certificates, no custom cert needed
 
 engine = create_async_engine(
     clean_url, echo=False, connect_args={"ssl": ssl_context})
