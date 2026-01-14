@@ -25,7 +25,8 @@ async def get_rules(
     Get all rules for the authenticated user.
     """
     result = await db.execute(
-        select(Rule).where(Rule.user_id == current_user.id).order_by(Rule.created_at.desc())
+        select(Rule).where(Rule.user_id == current_user.id).order_by(
+            Rule.created_at.desc())
     )
     rules = result.scalars().all()
     return [RuleResponse.model_validate(rule) for rule in rules]
@@ -48,11 +49,10 @@ async def create_rule(
         enabled=rule_data.enabled,
         auto_extract=rule_data.auto_extract
     )
-    
     db.add(new_rule)
     await db.flush()
     await db.refresh(new_rule)
-    
+
     return RuleResponse.model_validate(new_rule)
 
 
@@ -67,19 +67,19 @@ async def get_rule(
     """
     result = await db.execute(select(Rule).where(Rule.id == rule_id))
     rule = result.scalar_one_or_none()
-    
+
     if not rule:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Rule not found"
         )
-    
+
     if rule.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this rule"
         )
-    
+
     return RuleResponse.model_validate(rule)
 
 
@@ -95,27 +95,27 @@ async def update_rule(
     """
     result = await db.execute(select(Rule).where(Rule.id == rule_id))
     rule = result.scalar_one_or_none()
-    
+
     if not rule:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Rule not found"
         )
-    
+
     if rule.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to modify this rule"
         )
-    
+
     # Update only provided fields
     update_data = rule_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(rule, field, value)
-    
+
     await db.flush()
     await db.refresh(rule)
-    
+
     return RuleResponse.model_validate(rule)
 
 
@@ -130,18 +130,17 @@ async def delete_rule(
     """
     result = await db.execute(select(Rule).where(Rule.id == rule_id))
     rule = result.scalar_one_or_none()
-    
+
     if not rule:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Rule not found"
         )
-    
+
     if rule.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this rule"
         )
-    
-    await db.delete(rule)
 
+    await db.delete(rule)

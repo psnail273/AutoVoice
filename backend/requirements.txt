@@ -25,3 +25,8 @@ python-dotenv>=1.0.1
 pydantic>=2.10.0
 pydantic-settings>=2.6.0
 
+# Audio Processing & MP3 Encoding
+pydub>=0.25.1
+lameenc>=1.7.0
+audioop-lts>=0.2.2  # Python 3.13+ replacement for removed audioop module
+

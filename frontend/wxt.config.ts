@@ -8,6 +8,10 @@ export default defineConfig({
   webExt: {
     disabled: true,
   },
+  manifest: {
+    permissions: ['contextMenus', 'storage', 'tabs', 'scripting'],
+    host_permissions: ['<all_urls>'],
+  },
   vite: () => ({
     plugins: [tailwindcss()],
     resolve: {

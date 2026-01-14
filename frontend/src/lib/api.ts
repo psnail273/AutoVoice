@@ -288,4 +288,64 @@ export async function deleteRule(id: number): Promise<void> {
   });
 }
 
+// ============ TTS API ============
+
+/**
+ * Stream text-to-speech audio from the backend.
+ * Returns a blob containing the complete audio data.
+ * @deprecated Use streamTextToSpeechProgressive for true streaming playback
+ */
+export async function streamTextToSpeech(text: string): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json().catch(() => ({
+      detail: 'Failed to stream audio',
+    }));
+    throw new Error(error.detail);
+  }
+
+  // Convert streaming response to blob
+  return await response.blob();
+}
+
+/**
+ * Stream text-to-speech audio progressively using ReadableStream.
+ * Returns a stream of audio chunks that can be played as they arrive.
+ * This enables audio to start playing within 1-2 seconds instead of waiting
+ * for complete generation.
+ */
+export async function streamTextToSpeechProgressive(
+  text: string,
+  signal?: AbortSignal
+): Promise<ReadableStream<Uint8Array>> {
+  const response = await fetch(`${API_BASE_URL}/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json().catch(() => ({
+      detail: 'Failed to stream audio',
+    }));
+    throw new Error(error.detail);
+  }
+
+  if (!response.body) {
+    throw new Error('Response body is null');
+  }
+
+  return response.body;
+}
+
 export type { TokenResponse, UserResponse, RuleResponse, RuleCreate, RuleUpdate };

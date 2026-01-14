@@ -1,6 +1,6 @@
 {
-  "name": "wxt-react-starter",
-  "description": "manifest.json description",
+  "name": "auto-voice",
+  "description": "AutoVoice is a browser extension that allows you to voice your browser tabs.",
   "private": true,
   "version": "0.0.0",
   "type": "module",

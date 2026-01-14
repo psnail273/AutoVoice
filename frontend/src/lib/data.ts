@@ -1,12 +1,12 @@
 import type { Audio, Rule } from './types';
 
 export const defaultAudio: Audio = {
-  hasAudio: true,
-  website: 'test.com',
-  description: 'This is a test description',
-  audioTime: 1.7,
-  audioDuration: 2.4,
-  state: 'playing',
+  hasAudio: false,
+  website: '',
+  description: '',
+  audioTime: 0,
+  audioDuration: 0,
+  state: 'stopped',
   audioUrl: null,
 };
 

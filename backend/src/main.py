@@ -12,7 +12,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from src.tts.kokoro.utils import text_to_wav, stream_audio_chunks
+from src.tts.kokoro.utils import text_to_wav, stream_audio_chunks, stream_audio_chunks_mp3
 from src.routers import auth, rules
 from src.config import settings
 
@@ -86,13 +86,14 @@ async def convert_text(text_to_convert: TextToConvert) -> Response:
 @app.post("/stream", tags=["Text-to-Speech"])
 async def stream_text(text_to_convert: TextToConvert) -> StreamingResponse:
     """
-    Stream text-to-speech audio as WAV format (16-bit PCM, mono, 24kHz).
+    Stream text-to-speech audio as MP3 format (128kbps, mono, 24kHz).
 
     Audio begins playing as chunks arrive - no need to wait for full generation.
+    MP3 format enables MediaSource Extensions API for progressive streaming in browsers.
     """
     return StreamingResponse(
-        stream_audio_chunks(text_to_convert.text),
-        media_type="audio/wav",
+        stream_audio_chunks_mp3(text_to_convert.text),
+        media_type="audio/mpeg",
     )
 
 
