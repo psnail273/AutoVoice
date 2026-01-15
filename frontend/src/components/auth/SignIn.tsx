@@ -15,7 +15,7 @@ interface SignInProps {
  */
 export function SignIn({ onSwitchToSignUp }: SignInProps) {
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
+  const [usernameEmail, setUsernameEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +26,7 @@ export function SignIn({ onSwitchToSignUp }: SignInProps) {
     setIsLoading(true);
 
     try {
-      await login(username, password);
+      await login(usernameEmail, password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in');
     } finally {
@@ -64,16 +64,16 @@ export function SignIn({ onSwitchToSignUp }: SignInProps) {
             ) }
 
             <div className="space-y-2">
-              <Label htmlFor="username">Username or Email</Label>
+              <Label htmlFor="usernameEmail">Username or Email</Label>
               <Input
-                id="username"
+                id="usernameEmail"
                 type="text"
                 placeholder="Enter your username or email"
-                value={ username }
-                onChange={ (e) => setUsername(e.target.value) }
+                value={ usernameEmail }
+                onChange={ (e) => setUsernameEmail(e.target.value) }
                 required
                 disabled={ isLoading }
-                autoComplete="username"
+                autoComplete="usernameEmail"
               />
             </div>
 

@@ -34,7 +34,8 @@ async def signup(
 
     Rate limit: 5 signups per hour per IP address.
     """
-    logger.info(f"Signup attempt for username: {user_data.username}, email: {user_data.email}")
+    logger.info(
+        f"Signup attempt for username: {user_data.username}, email: {user_data.email}")
 
     try:
         # Check if username or email already exists
@@ -50,12 +51,14 @@ async def signup(
 
         if existing_user:
             if existing_user.username == user_data.username:
-                logger.warning(f"Failed signup attempt - username already exists: {user_data.username}")
+                logger.warning(
+                    f"Failed signup attempt - username already exists: {user_data.username}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Username already registered"
                 )
-            logger.warning(f"Failed signup attempt - email already exists: {user_data.email}")
+            logger.warning(
+                f"Failed signup attempt - email already exists: {user_data.email}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered"
@@ -78,14 +81,16 @@ async def signup(
         await db.commit()
         await db.refresh(new_user)
 
-        logger.info(f"Successfully created user: {new_user.username} (ID: {new_user.id})")
+        logger.info(
+            f"Successfully created user: {new_user.username} (ID: {new_user.id})")
         return Token(access_token=access_token)
     except HTTPException:
         # Re-raise HTTP exceptions (validation errors)
         raise
     except Exception as e:
         # Rollback on any unexpected error
-        logger.error(f"Signup error for username {user_data.username}: {str(e)}")
+        logger.error(
+            f"Signup error for username {user_data.username}: {str(e)}")
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -107,14 +112,14 @@ async def login(
 
     Rate limit: 10 login attempts per minute per IP address.
     """
-    logger.info(f"Login attempt for user: {credentials.username}")
+    logger.info(f"Login attempt for user: {credentials.usernameEmail}")
 
     # Find user by username or email
     result = await db.execute(
         select(User).where(
             or_(
-                User.username == credentials.username,
-                User.email == credentials.username
+                User.username == credentials.usernameEmail,
+                User.email == credentials.usernameEmail
             )
         )
     )
@@ -130,7 +135,8 @@ async def login(
         is_valid = verify_password(credentials.password, password_hash)
     except (ValueError, Exception) as e:
         # If password verification fails (e.g., invalid hash format), treat as invalid
-        logger.warning(f"Password verification error for {credentials.username}: {str(e)}")
+        logger.warning(
+            f"Password verification error for {credentials.username}: {str(e)}")
         is_valid = False
 
     if not user or not is_valid:
@@ -152,8 +158,7 @@ async def login(
 async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
     """
     Get the current authenticated user's profile.
-    
+
     Requires a valid JWT token in the Authorization header.
     """
     return UserResponse.model_validate(current_user)
-

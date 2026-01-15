@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
-import { Play, Loader2 } from 'lucide-react';
-import { Card, CardContent } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { getRules, type RuleResponse } from '@/lib/api';
 import { AddRule } from './addRule';
-import { useAudio } from '@/hooks/use-audio';
-import type { PendingRuleData, ExtractTextMessage, ExtractTextResponse } from '@/lib/messages';
+import { useAudioController } from '@/hooks/use-audio-controller';
+import PlaybackControls from '../playback/playbackControls';
+import type { PendingRuleData } from '@/lib/messages';
 
 /**
  * Checks if a URL matches a rule's url_pattern.
@@ -42,9 +42,14 @@ export default function Rules() {
     url: string;
     selector: string;
   } | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractError, setExtractError] = useState<string | null>(null);
-  const { loadAudioFromText } = useAudio();
+  const { audioState, loadAndPlay, isLoading: isLoadingAudio, error: audioError, play, pause, stop, restart, seek } = useAudioController();
+
+  // Derived state for playback controls
+  const hasAudio = audioState?.hasAudio || false;
+  const playbackState = audioState?.playbackState || 'stopped';
+  const audioTime = audioState?.audioTime || 0;
+  const audioDuration = audioState?.audioDuration || 0;
+  const isBuffering = playbackState === 'buffering' || playbackState === 'loading';
 
   useEffect(() => {
     /**
@@ -141,57 +146,29 @@ export default function Rules() {
 
   /**
    * Handles play button click for the active rule.
-   * 1. Extract text from page using rule selectors
-   * 2. Send text to backend TTS stream endpoint
-   * 3. Load and play audio
+   * Uses the audio controller to extract text and load audio in the content script.
    */
   async function handlePlayActiveRule() {
-    if (!activeRule || !currentUrl) return;
+    if (!activeRule) return;
 
-    setIsExtracting(true);
-    setExtractError(null);
+    await loadAndPlay(
+      activeRule.keep_selectors,
+      activeRule.ignore_selectors,
+      activeRule.url_pattern
+    );
+  }
 
-    try {
-      // Step 1: Get active tab
-      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-      const activeTab = tabs[0];
-
-      if (!activeTab?.id) {
-        throw new Error('No active tab found');
-      }
-
-      // Step 2: Request text extraction from content script
-      const message: ExtractTextMessage = {
-        type: 'EXTRACT_TEXT',
-        keepSelectors: activeRule.keep_selectors,
-        ignoreSelectors: activeRule.ignore_selectors,
-      };
-
-      const response = (await browser.tabs.sendMessage(activeTab.id, message)) as ExtractTextResponse;
-
-      if (!response) {
-        throw new Error(
-          'Content script not responding. Try refreshing the page or check if this URL is supported.',
-        );
-      }
-
-      if (response.error) {
-        throw new Error(`Extraction failed: ${response.error}`);
-      }
-
-      if (!response.text || response.text.trim().length === 0) {
-        throw new Error('No content found with rule selectors');
-      }
-
-      // Step 3: Load and auto-play streaming audio from backend
-      const url = new URL(currentUrl);
-      await loadAudioFromText(response.text, url.hostname, activeRule.url_pattern, true);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to play audio';
-      setExtractError(errorMessage);
-      console.error('[Rules] Error playing active rule:', error);
-    } finally {
-      setIsExtracting(false);
+  /**
+   * Handle play/pause toggle.
+   * If no audio loaded, start playback. Otherwise toggle play/pause.
+   */
+  function handlePlayPause() {
+    if (!hasAudio) {
+      handlePlayActiveRule();
+    } else if (playbackState === 'playing') {
+      pause();
+    } else {
+      play();
     }
   }
 
@@ -224,28 +201,23 @@ export default function Rules() {
         <h3 className="text-sm font-semibold text-muted-foreground">Active Rule</h3>
         { activeRule ? (
           <Card className="w-full border-primary/50">
-            <CardContent className="py-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-mono wrap-anywhere flex-1">{ activeRule.url_pattern }</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={ handlePlayActiveRule }
-                  disabled={ isExtracting }
-                  className="shrink-0"
-                  title="Extract and play text from this page"
-                >
-                  { isExtracting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Play className="w-4 h-4" fill="currentColor" />
-                  ) }
-                </Button>
-              </div>
-              { extractError && (
-                <div className="mt-2 text-xs text-destructive">{ extractError }</div>
-              ) }
-            </CardContent>
+            <CardHeader className="py-2 px-4">
+              <CardTitle className="text-sm font-mono wrap-anywhere">{ activeRule.url_pattern }</CardTitle>
+            </CardHeader>
+            <PlaybackControls
+              audioTime={ audioTime }
+              audioDuration={ audioDuration }
+              isBuffering={ isBuffering }
+              isLoading={ isLoadingAudio }
+              error={ audioError }
+              handlePlayPause={ handlePlayPause }
+              isPlayPauseDiabled={ isLoadingAudio }
+              stop={ stop }
+              restart={ restart }
+              seek={ seek }
+              hasAudio={ hasAudio }
+              playbackState={ playbackState }
+            />
           </Card>
         ) : (
           <div className="text-center text-muted-foreground text-sm">

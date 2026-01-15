@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import NavMenu from '@/components/navMenu.tsx/navMenu';
 import { SignIn, SignUp } from '@/components/auth';
-import { AudioProvider } from '@/hooks/use-audio';
+import { AudioControllerProvider } from '@/hooks/use-audio-controller';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
@@ -55,9 +55,9 @@ function AppContent() {
 
       { /* Main content */ }
       <div className="flex-1 ">
-        <AudioProvider>
+        <AudioControllerProvider>
           <NavMenu />
-        </AudioProvider>
+        </AudioControllerProvider>
       </div>
     </div>
   );

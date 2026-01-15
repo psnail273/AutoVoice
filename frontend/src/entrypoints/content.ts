@@ -1,5 +1,12 @@
 import { browser } from 'wxt/browser';
-import type { ExtensionMessage, SelectorResponse, ExtractTextMessage, ExtractTextResponse } from '@/lib/messages';
+import type {
+  ExtensionMessage,
+  SelectorResponse,
+  ExtractTextMessage,
+  ExtractTextResponse,
+  AudioStateResponse,
+} from '@/lib/messages';
+import { contentAudioPlayer } from '@/lib/content-audio-player';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -78,6 +85,61 @@ export default defineContentScript({
         }
 
         return true; // Keep channel open for async response
+      }
+
+      // === AUDIO MESSAGE HANDLERS ===
+
+      if (message.type === 'AUDIO_LOAD') {
+        console.log('[Content] Received AUDIO_LOAD');
+        contentAudioPlayer
+          .loadAudio(message.text, message.website, message.description, message.autoPlay)
+          .then(() => sendResponse({ success: true }))
+          .catch((error) => sendResponse({ success: false, error: String(error) }));
+        return true; // Async response
+      }
+
+      if (message.type === 'AUDIO_PLAY') {
+        console.log('[Content] Received AUDIO_PLAY');
+        contentAudioPlayer.play();
+        sendResponse({ success: true });
+        return true;
+      }
+
+      if (message.type === 'AUDIO_PAUSE') {
+        console.log('[Content] Received AUDIO_PAUSE');
+        contentAudioPlayer.pause();
+        sendResponse({ success: true });
+        return true;
+      }
+
+      if (message.type === 'AUDIO_STOP') {
+        console.log('[Content] Received AUDIO_STOP');
+        contentAudioPlayer.stop();
+        sendResponse({ success: true });
+        return true;
+      }
+
+      if (message.type === 'AUDIO_GET_STATE') {
+        console.log('[Content] Received AUDIO_GET_STATE');
+        const response: AudioStateResponse = {
+          state: contentAudioPlayer.getState(),
+        };
+        sendResponse(response);
+        return true;
+      }
+
+      if (message.type === 'AUDIO_RESTART') {
+        console.log('[Content] Received AUDIO_RESTART');
+        contentAudioPlayer.restart();
+        sendResponse({ success: true });
+        return true;
+      }
+
+      if (message.type === 'AUDIO_SEEK') {
+        console.log('[Content] Received AUDIO_SEEK', message.time);
+        contentAudioPlayer.seek(message.time);
+        sendResponse({ success: true });
+        return true;
       }
     });
   },

@@ -46,7 +46,7 @@ class UserCreate(BaseModel):
 
 class UserLogin(BaseModel):
     """Schema for user login."""
-    username: str = Field(description="Username or email")
+    usernameEmail: str = Field(description="Username or email")
     password: str = Field(description="User password")
 
 
@@ -70,4 +70,3 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Schema for decoded JWT token data."""
     user_id: int | None = None
-

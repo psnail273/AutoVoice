@@ -188,12 +188,12 @@ export async function signup(
  * Log in an existing user.
  */
 export async function login(
-  username: string,
+  usernameEmail: string,
   password: string
 ): Promise<TokenResponse> {
   const response = await apiRequest<TokenResponse>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ usernameEmail, password }),
   });
   
   await setToken(response.access_token);

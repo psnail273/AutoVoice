@@ -18,7 +18,7 @@ interface AuthContextType {
   user: UserResponse | null;
   isLoading: LoadingState;
   isLoggedIn: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (usernameEmail: string, password: string) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -72,10 +72,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, [refreshUser]);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (usernameEmail: string, password: string) => {
     setIsLoading(prev => ({ ...prev, authenticating: true }));
     try {
-      await apiLogin(username, password);
+      await apiLogin(usernameEmail, password);
       await refreshUser();
     } finally {
       setIsLoading(prev => ({ ...prev, authenticating: false }));
