@@ -161,6 +161,68 @@ export interface AudioStreamAbortMessage {
   portName: string;
 }
 
+// === CROSS-TAB AUDIO CONTROL (Popup -> Background -> Content Script) ===
+
+/**
+ * Generic audio command routed through background script.
+ * Background forwards to the tab that has active audio playing.
+ */
+export interface AudioCommandMessage {
+  type: 'AUDIO_COMMAND';
+  command: 'play' | 'pause' | 'stop' | 'restart';
+}
+
+/**
+ * Seek command routed through background script.
+ */
+export interface AudioSeekCommandMessage {
+  type: 'AUDIO_SEEK_COMMAND';
+  time: number;
+}
+
+/**
+ * Load audio command routed through background script.
+ * Background stops any existing audio on other tabs before loading.
+ */
+export interface AudioLoadCommandMessage {
+  type: 'AUDIO_LOAD_COMMAND';
+  targetTabId: number;
+  text: string;
+  website: string;
+  description: string;
+  autoPlay: boolean;
+}
+
+/**
+ * Request global audio state from background.
+ * Returns which tab is playing and the current audio state.
+ */
+export interface AudioGetGlobalStateMessage {
+  type: 'AUDIO_GET_GLOBAL_STATE';
+}
+
+/**
+ * Response containing global audio state and active tab info.
+ */
+export interface AudioGlobalStateResponse {
+  state: AudioState | null;
+  activeTabId: number | null;
+}
+
+/**
+ * Request from content script to get its own tab ID.
+ */
+export interface GetOwnTabIdMessage {
+  type: 'GET_OWN_TAB_ID';
+}
+
+/**
+ * Response containing the content script's tab ID.
+ */
+export interface GetOwnTabIdResponse {
+  tabId: number;
+}
+
 /**
  * Union type of all extension messages.
  */
@@ -176,4 +238,9 @@ export type ExtensionMessage =
   | AudioSeekMessage
   | AudioStateUpdateMessage
   | AudioStreamStartMessage
-  | AudioStreamAbortMessage;
+  | AudioStreamAbortMessage
+  | AudioCommandMessage
+  | AudioSeekCommandMessage
+  | AudioLoadCommandMessage
+  | AudioGetGlobalStateMessage
+  | GetOwnTabIdMessage;

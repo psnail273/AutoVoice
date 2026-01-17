@@ -2,29 +2,27 @@
 
 /**
  * Audio controller hook for the popup.
- * Acts as a remote control, sending commands to the content script
- * which handles the actual audio playback.
+ * Routes all commands through the background script which knows
+ * which tab has audio playing, enabling cross-tab control.
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { browser } from 'wxt/browser';
 import type {
   AudioState,
-  AudioLoadMessage,
-  AudioPlayMessage,
-  AudioPauseMessage,
-  AudioStopMessage,
-  AudioGetStateMessage,
   AudioStateUpdateMessage,
-  AudioStateResponse,
+  AudioCommandMessage,
+  AudioSeekCommandMessage,
+  AudioLoadCommandMessage,
+  AudioGlobalStateResponse,
   ExtractTextMessage,
   ExtractTextResponse,
-  AudioRestartMessage,
-  AudioSeekMessage,
 } from '@/lib/messages';
 
 interface AudioControllerContextType {
   audioState: AudioState | null;
+  activeAudioTabId: number | null;
+  currentTabId: number | null;
   isLoading: boolean;
   error: string | null;
   loadAndPlay: (
@@ -41,71 +39,57 @@ interface AudioControllerContextType {
 
 const AudioControllerContext = createContext<AudioControllerContextType | null>(null);
 
-/**
- * Type guard to validate storage result structure.
- */
-function isStorageResult(obj: unknown): obj is { audioPlaybackState?: AudioState } {
-  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
-}
-
 export function AudioControllerProvider({ children }: { children: ReactNode }) {
   const [audioState, setAudioState] = useState<AudioState | null>(null);
-  const [activeTabId, setActiveTabId] = useState<number | null>(null);
+  const [activeAudioTabId, setActiveAudioTabId] = useState<number | null>(null);
+  const [currentTabId, setCurrentTabId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get active tab ID on mount
+  // Get current browser tab ID on mount
   useEffect(() => {
     browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       if (tabs[0]?.id) {
-        setActiveTabId(tabs[0].id);
+        setCurrentTabId(tabs[0].id);
       }
     });
   }, []);
 
-  // Fetch initial state from storage or content script
+  // Fetch global audio state from background on mount
   useEffect(() => {
-    async function fetchInitialState() {
-      // First check storage for any playing audio
+    async function fetchGlobalState() {
       try {
-        const result = await browser.storage.local.get('audioPlaybackState');
-        if (isStorageResult(result) && result.audioPlaybackState) {
-          setAudioState(result.audioPlaybackState);
+        const response = (await browser.runtime.sendMessage({
+          type: 'AUDIO_GET_GLOBAL_STATE',
+        })) as AudioGlobalStateResponse;
+
+        if (response) {
+          setAudioState(response.state);
+          setActiveAudioTabId(response.activeTabId);
         }
       } catch (e) {
-        console.warn('[AudioController] Storage read failed:', e);
-      }
-
-      // Then query active tab's content script for fresh state
-      if (activeTabId) {
-        try {
-          const message: AudioGetStateMessage = { type: 'AUDIO_GET_STATE' };
-          const response = (await browser.tabs.sendMessage(
-            activeTabId,
-            message
-          )) as AudioStateResponse;
-
-          if (response?.state) {
-            setAudioState(response.state);
-          }
-        } catch (e) {
-          // Content script might not be loaded on this page
-          console.log('[AudioController] Could not query content script:', e);
-        }
+        console.warn('[AudioController] Failed to get global state:', e);
       }
     }
 
-    if (activeTabId !== null) {
-      fetchInitialState();
-    }
-  }, [activeTabId]);
+    fetchGlobalState();
+  }, []);
 
-  // Listen for state updates from content script
+  // Listen for state updates from background/content scripts
   useEffect(() => {
     const handleMessage = (message: AudioStateUpdateMessage) => {
       if (message.type === 'AUDIO_STATE_UPDATE') {
         setAudioState(message.state);
         setError(message.state.error || null);
+
+        // Update active tab ID based on playback state
+        if (message.state.tabId) {
+          if (message.state.playbackState === 'stopped') {
+            setActiveAudioTabId(null);
+          } else {
+            setActiveAudioTabId(message.state.tabId);
+          }
+        }
       }
     };
 
@@ -116,11 +100,12 @@ export function AudioControllerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Extract text from page and tell content script to load audio.
+   * Extract text from current tab and load audio.
+   * Routes through background which handles stopping other audio.
    */
   const loadAndPlay = useCallback(
     async (keepSelectors: string[], ignoreSelectors: string[], urlPattern: string) => {
-      if (!activeTabId) {
+      if (!currentTabId) {
         setError('No active tab');
         return;
       }
@@ -129,7 +114,7 @@ export function AudioControllerProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        // Step 1: Extract text from page
+        // Step 1: Extract text from current tab's page
         const extractMessage: ExtractTextMessage = {
           type: 'EXTRACT_TEXT',
           keepSelectors,
@@ -137,7 +122,7 @@ export function AudioControllerProvider({ children }: { children: ReactNode }) {
         };
 
         const extractResponse = (await browser.tabs.sendMessage(
-          activeTabId,
+          currentTabId,
           extractMessage
         )) as ExtractTextResponse;
 
@@ -159,16 +144,24 @@ export function AudioControllerProvider({ children }: { children: ReactNode }) {
           hostname = 'Unknown';
         }
 
-        // Step 3: Tell content script to load audio
-        const loadMessage: AudioLoadMessage = {
-          type: 'AUDIO_LOAD',
+        // Step 3: Send load command through background
+        // Background will stop any existing audio and load on current tab
+        const loadMessage: AudioLoadCommandMessage = {
+          type: 'AUDIO_LOAD_COMMAND',
+          targetTabId: currentTabId,
           text: extractResponse.text,
           website: hostname,
           description: urlPattern,
           autoPlay: true,
         };
 
-        await browser.tabs.sendMessage(activeTabId, loadMessage);
+        const response = (await browser.runtime.sendMessage(loadMessage)) as {
+          success: boolean;
+          error?: string;
+        };
+        if (!response?.success) {
+          throw new Error(response?.error || 'Failed to load audio');
+        }
       } catch (e) {
         const errorMsg = e instanceof Error ? e.message : 'Failed to load audio';
         setError(errorMsg);
@@ -177,80 +170,110 @@ export function AudioControllerProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [activeTabId]
+    [currentTabId]
   );
 
   /**
-   * Resume audio playback.
+   * Resume audio playback via background.
    */
   const play = useCallback(async () => {
-    if (!activeTabId) return;
     try {
-      const message: AudioPlayMessage = { type: 'AUDIO_PLAY' };
-      await browser.tabs.sendMessage(activeTabId, message);
+      const message: AudioCommandMessage = { type: 'AUDIO_COMMAND', command: 'play' };
+      const response = (await browser.runtime.sendMessage(message)) as {
+        success: boolean;
+        error?: string;
+      };
+      if (!response?.success) {
+        setError(response?.error || 'Failed to resume playback');
+      }
     } catch (e) {
       console.error('[AudioController] play error:', e);
       setError('Failed to resume playback');
     }
-  }, [activeTabId]);
+  }, []);
 
   /**
-   * Pause audio playback.
+   * Pause audio playback via background.
    */
   const pause = useCallback(async () => {
-    if (!activeTabId) return;
     try {
-      const message: AudioPauseMessage = { type: 'AUDIO_PAUSE' };
-      await browser.tabs.sendMessage(activeTabId, message);
+      const message: AudioCommandMessage = { type: 'AUDIO_COMMAND', command: 'pause' };
+      const response = (await browser.runtime.sendMessage(message)) as {
+        success: boolean;
+        error?: string;
+      };
+      if (!response?.success) {
+        setError(response?.error || 'Failed to pause playback');
+      }
     } catch (e) {
       console.error('[AudioController] pause error:', e);
       setError('Failed to pause playback');
     }
-  }, [activeTabId]);
+  }, []);
 
+  /**
+   * Restart audio from beginning via background.
+   */
   const restart = useCallback(async () => {
-    if (!activeTabId) return;
     try {
-      const message: AudioRestartMessage = { type: 'AUDIO_RESTART' };
-      await browser.tabs.sendMessage(activeTabId, message);
+      const message: AudioCommandMessage = { type: 'AUDIO_COMMAND', command: 'restart' };
+      const response = (await browser.runtime.sendMessage(message)) as {
+        success: boolean;
+        error?: string;
+      };
+      if (!response?.success) {
+        setError(response?.error || 'Failed to restart playback');
+      }
     } catch (e) {
       console.error('[AudioController] restart error:', e);
       setError('Failed to restart playback');
     }
-  }, [activeTabId]);
+  }, []);
 
   /**
-   * Seek to a specific time in the audio.
+   * Seek to a specific time via background.
    */
   const seek = useCallback(async (time: number) => {
-    if (!activeTabId) return;
     try {
-      const message: AudioSeekMessage = { type: 'AUDIO_SEEK', time };
-      await browser.tabs.sendMessage(activeTabId, message);
+      const message: AudioSeekCommandMessage = { type: 'AUDIO_SEEK_COMMAND', time };
+      const response = (await browser.runtime.sendMessage(message)) as {
+        success: boolean;
+        error?: string;
+      };
+      if (!response?.success) {
+        setError(response?.error || 'Failed to seek');
+      }
     } catch (e) {
       console.error('[AudioController] seek error:', e);
       setError('Failed to seek');
     }
-  }, [activeTabId]);
+  }, []);
 
   /**
-   * Stop audio and reset.
+   * Stop audio and reset via background.
    */
   const stop = useCallback(async () => {
-    if (!activeTabId) return;
     try {
-      const message: AudioStopMessage = { type: 'AUDIO_STOP' };
-      await browser.tabs.sendMessage(activeTabId, message);
+      const message: AudioCommandMessage = { type: 'AUDIO_COMMAND', command: 'stop' };
+      const response = (await browser.runtime.sendMessage(message)) as {
+        success: boolean;
+        error?: string;
+      };
+      if (!response?.success) {
+        setError(response?.error || 'Failed to stop playback');
+      }
     } catch (e) {
       console.error('[AudioController] stop error:', e);
       setError('Failed to stop playback');
     }
-  }, [activeTabId]);
+  }, []);
 
   return (
     <AudioControllerContext.Provider
       value={ {
         audioState,
+        activeAudioTabId,
+        currentTabId,
         isLoading,
         error,
         loadAndPlay,

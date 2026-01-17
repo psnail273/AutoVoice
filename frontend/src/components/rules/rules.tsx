@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
+import { Loader2, Play } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
@@ -42,7 +43,19 @@ export default function Rules() {
     url: string;
     selector: string;
   } | null>(null);
-  const { audioState, loadAndPlay, isLoading: isLoadingAudio, error: audioError, play, pause, stop, restart, seek } = useAudioController();
+  const {
+    audioState,
+    activeAudioTabId,
+    currentTabId,
+    loadAndPlay,
+    isLoading: isLoadingAudio,
+    error: audioError,
+    play,
+    pause,
+    stop,
+    restart,
+    seek,
+  } = useAudioController();
 
   // Derived state for playback controls
   const hasAudio = audioState?.hasAudio || false;
@@ -177,6 +190,16 @@ export default function Rules() {
     ? rules.find((rule) => matchesUrlPattern(rule.url_pattern, currentUrl))
     : null;
 
+  // Check if the currently playing audio is from the active rule on this tab
+  // Audio is from active rule if:
+  // 1. Audio is playing on this tab (activeAudioTabId === currentTabId)
+  // 2. Audio's description matches the active rule's URL pattern
+  const isAudioFromActiveRule =
+    hasAudio &&
+    activeRule &&
+    activeAudioTabId === currentTabId &&
+    audioState?.description === activeRule.url_pattern;
+
   // Get all other rules (excluding the active one)
   const otherRules = activeRule
     ? rules.filter((rule) => rule.id !== activeRule.id)
@@ -195,7 +218,7 @@ export default function Rules() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 w-full">
       { /* Active Rule Section */ }
       <div className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Active Rule</h3>
@@ -204,20 +227,44 @@ export default function Rules() {
             <CardHeader className="py-2 px-4">
               <CardTitle className="text-sm font-mono wrap-anywhere">{ activeRule.url_pattern }</CardTitle>
             </CardHeader>
-            <PlaybackControls
-              audioTime={ audioTime }
-              audioDuration={ audioDuration }
-              isBuffering={ isBuffering }
-              isLoading={ isLoadingAudio }
-              error={ audioError }
-              handlePlayPause={ handlePlayPause }
-              isPlayPauseDiabled={ isLoadingAudio }
-              stop={ stop }
-              restart={ restart }
-              seek={ seek }
-              hasAudio={ hasAudio }
-              playbackState={ playbackState }
-            />
+            { isAudioFromActiveRule ? (
+              // Show full playback controls when audio is from this rule
+              <PlaybackControls
+                audioTime={ audioTime }
+                audioDuration={ audioDuration }
+                isBuffering={ isBuffering }
+                isLoading={ isLoadingAudio }
+                error={ audioError }
+                handlePlayPause={ handlePlayPause }
+                isPlayPauseDiabled={ isLoadingAudio }
+                stop={ stop }
+                restart={ restart }
+                seek={ seek }
+                hasAudio={ hasAudio }
+                playbackState={ playbackState }
+              />
+            ) : (
+              // Show just a play button when no audio or audio is from different source
+              <CardContent>
+                { audioError && (
+                  <div className="text-sm text-destructive text-center mb-2">{ audioError }</div>
+                ) }
+                { isLoadingAudio && (
+                  <div className="text-sm text-muted-foreground text-center mb-2 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading audio...
+                  </div>
+                ) }
+                <Button
+                  className="w-full"
+                  onClick={ handlePlayActiveRule }
+                  disabled={ isLoadingAudio }
+                >
+                  <Play fill="currentColor" className="mr-2" />
+                  Play
+                </Button>
+              </CardContent>
+            ) }
           </Card>
         ) : (
           <div className="text-center text-muted-foreground text-sm">

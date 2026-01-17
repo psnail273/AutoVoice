@@ -5,6 +5,7 @@ import type {
   ExtractTextMessage,
   ExtractTextResponse,
   AudioStateResponse,
+  GetOwnTabIdResponse,
 } from '@/lib/messages';
 import { contentAudioPlayer } from '@/lib/content-audio-player';
 
@@ -12,6 +13,19 @@ export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
     console.log('[Content] AutoVoice content script loaded');
+
+    // Get this tab's ID from background and set it on the audio player
+    browser.runtime
+      .sendMessage({ type: 'GET_OWN_TAB_ID' })
+      .then((response: GetOwnTabIdResponse) => {
+        if (response?.tabId) {
+          console.log('[Content] Setting tab ID:', response.tabId);
+          contentAudioPlayer.setTabId(response.tabId);
+        }
+      })
+      .catch((error) => {
+        console.warn('[Content] Failed to get tab ID:', error);
+      });
 
     // Track the last right-clicked element
     let lastRightClickedElement: Element | null = null;

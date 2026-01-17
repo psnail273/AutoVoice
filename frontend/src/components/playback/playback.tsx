@@ -1,15 +1,20 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { ButtonGroup } from '../ui/button-group';
-import { SkipBack, Play, Pause, UndoDot, RedoDot, Loader2 } from 'lucide-react';
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { Progress } from '../ui/progress';
+import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { useAudioController } from '@/hooks/use-audio-controller';
 import PlaybackControls from './playbackControls';
 
 export default function Playback() {
-  const { audioState, isLoading, error, play, pause, stop, restart, seek } = useAudioController();
+  const {
+    audioState,
+    isLoading,
+    error,
+    play,
+    pause,
+    stop,
+    restart,
+    seek,
+  } = useAudioController();
 
   const hasAudio = audioState?.hasAudio || false;
   const playbackState = audioState?.playbackState || 'stopped';

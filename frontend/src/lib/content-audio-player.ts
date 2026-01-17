@@ -165,7 +165,7 @@ class ContentAudioPlayer {
     // Cleanup previous MediaSource
     this.cleanupMediaSource();
 
-    // Reset state
+    // Reset state but preserve tab ID
     this.state = {
       hasAudio: true,
       website,
@@ -173,7 +173,7 @@ class ContentAudioPlayer {
       audioTime: 0,
       audioDuration: 0,
       playbackState: 'loading',
-      tabId: 0,
+      tabId: this.state.tabId, // Preserve tab ID
       error: undefined,
     };
     this.broadcastState();
@@ -525,7 +525,7 @@ class ContentAudioPlayer {
     // Cleanup MediaSource
     this.cleanupMediaSource();
 
-    // Reset state
+    // Reset state but preserve tab ID
     this.state = {
       hasAudio: false,
       website: '',
@@ -533,7 +533,7 @@ class ContentAudioPlayer {
       audioTime: 0,
       audioDuration: 0,
       playbackState: 'stopped',
-      tabId: 0,
+      tabId: this.state.tabId, // Preserve tab ID
       error: undefined,
     };
 
@@ -551,6 +551,14 @@ class ContentAudioPlayer {
    */
   getState(): AudioState {
     return { ...this.state };
+  }
+
+  /**
+   * Set this content script's tab ID.
+   * Called from content.ts after querying background for own tab ID.
+   */
+  setTabId(tabId: number): void {
+    this.state.tabId = tabId;
   }
 
   /**
