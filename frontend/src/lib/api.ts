@@ -10,6 +10,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 let authValidationCache: { isValid: boolean; timestamp: number } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Current user cache and in-flight dedupe
+let currentUserCache: { user: UserResponse; timestamp: number } | null = null;
+let currentUserInFlight: Promise<UserResponse> | null = null;
+const USER_CACHE_DURATION = 10 * 1000; // 10 seconds
+
 // Rules cache key for browser storage
 const RULES_CACHE_KEY = 'cachedRules';
 
@@ -111,6 +116,8 @@ async function setToken(token: string): Promise<void> {
     console.warn('[API] Failed to access browser.storage:', error);
   }
 
+  currentUserCache = null;
+
   if (typeof localStorage !== 'undefined') {
     try {
       localStorage.setItem('authToken', token);
@@ -130,6 +137,8 @@ async function removeToken(): Promise<void> {
   } catch (error) {
     console.warn('[API] Failed to clear browser.storage:', error);
   }
+
+  currentUserCache = null;
 
   if (typeof localStorage !== 'undefined') {
     try {
@@ -240,6 +249,7 @@ export async function login(
  */
 export async function logout(): Promise<void> {
   authValidationCache = null;
+  currentUserCache = null;
   await removeToken();
   await clearCachedRules();
 }
@@ -248,7 +258,22 @@ export async function logout(): Promise<void> {
  * Get the current user's profile.
  */
 export async function getCurrentUser(): Promise<UserResponse> {
-  return apiRequest<UserResponse>('/auth/me');
+  const now = Date.now();
+  if (currentUserCache && now - currentUserCache.timestamp < USER_CACHE_DURATION) {
+    return currentUserCache.user;
+  }
+
+  if (!currentUserInFlight) {
+    currentUserInFlight = apiRequest<UserResponse>('/auth/me');
+  }
+
+  try {
+    const user = await currentUserInFlight;
+    currentUserCache = { user, timestamp: Date.now() };
+    return user;
+  } finally {
+    currentUserInFlight = null;
+  }
 }
 
 /**

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { 
   login as apiLogin, 
   signup as apiSignup, 
@@ -40,6 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshing: false,
     authenticating: false,
   });
+  const hasInitialized = useRef(false);
 
   const refreshUser = useCallback(async () => {
     setIsLoading(prev => ({ ...prev, refreshing: true }));
@@ -64,6 +65,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check auth status on mount
   useEffect(() => {
+    if (hasInitialized.current) {
+      return;
+    }
+    hasInitialized.current = true;
     const checkAuth = async () => {
       setIsLoading(prev => ({ ...prev, initial: true }));
       await refreshUser();
