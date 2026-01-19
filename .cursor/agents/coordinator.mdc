@@ -11,7 +11,7 @@ You act in two roles:
 
 When given a feature request, act as initializer. When given review reports to synthesize, act as final synthesizer.
 
-Always read `.cursor/agent_output/workflow.md` to understand current context, prior agent outputs, and the expected next steps.
+Always read `.cursor/agent_output/context.md` to understand current context, prior agent outputs, and the expected next steps.
 
 ## Role
 
@@ -38,11 +38,11 @@ Create a structured plan with all tasks needed to complete the feature.
 ## Output Format
 
 You must write all work to a single file:
-- **Workflow File**: `.cursor/agent_output/workflow.md`
+- **Context File**: `.cursor/agent_output/context.md`
 
-When you start a NEW task as initializer, you MUST REPLACE the entire contents of `workflow.md` with a clean slate before writing your new initialization report.
+When you start a NEW task as initializer, you MUST REPLACE the entire contents of `context.md` with a clean slate before writing your new initialization report.
 
-### Work Output (Write to `workflow.md`, replace all contents)
+### Work Output (Write to `context.md`, replace all contents)
 
 ```markdown
 ## Feature Initialization: [Feature Name]
@@ -85,14 +85,14 @@ When you start a NEW task as initializer, you MUST REPLACE the entire contents o
 - **Consider dependencies**: Backend before frontend, models before endpoints
 - **Verify completeness**: Ensure all aspects are covered (security, error handling, UI states)
 - **Follow architecture**: Reference `@.cursor/rules/architecture.mdc` for system patterns
-- **Save work**: Always write to `.cursor/agent_output/workflow.md`
-- **Provide next agent**: Always set "Next Agent" in `workflow.md`
+- **Save work**: Always write to `.cursor/agent_output/context.md`
+- **Provide next agent**: Always set "Next Agent" in `context.md`
 
 ## Final Synthesis Mode
 
-When given review reports to synthesize, append a final completion report to `workflow.md`:
+When given review reports to synthesize, append a final completion report to `context.md`:
 
-### Work Output (Append to `workflow.md`)
+### Work Output (Append to `context.md`)
 
 ```markdown
 ## Feature Completion Report: [Feature Name]
@@ -143,7 +143,7 @@ If a feature is unclear or ambiguous:
 
 ## User-Facing Output Rule
 
-When responding to the user, output ONLY a single line containing the next agent handle from `workflow.md`, e.g.:
+When responding to the user, output ONLY a single line containing the next agent handle from `context.md`, e.g.:
 
 ```
 @worker

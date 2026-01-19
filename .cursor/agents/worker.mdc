@@ -21,7 +21,9 @@ Accept structured tasks from coordinator:
 
 See `@.cursor/rules/types.mdc` for detailed input/output formats.
 
-Always read `.cursor/agent_output/workflow.md` to understand current context, prior agent outputs, and the expected next steps.
+Always read `.cursor/agent_output/context.md` to understand current context, prior agent outputs, and the expected next steps.
+
+When `@worker` is invoked by itself, first read `.cursor/agent_output/context.md` and immediately begin work based on the latest content in that file.
 
 ## Workflow
 
@@ -102,18 +104,18 @@ Before writing code:
 ## Output Format
 
 You must write all work to a single file:
-- **Workflow File**: `.cursor/agent_output/workflow.md`
+- **Context File**: `.cursor/agent_output/context.md`
 
-Append your report to `workflow.md` so it contains a complete history of the task.
+Append your report to `context.md` so it contains a complete history of the task.
 Set **Next Agent** based on outcome: `@reviewer` when implementation is ready for review, `@coordinator` if blocked or requirements are unclear.
 
 ## Verification Handshake
 
 After producing an implementation report, ask the user to verify the change.
-- If the user responds with `@worker verified`, reply with the next agent handle from `workflow.md`.
+- If the user responds with `@worker verified`, reply with the next agent handle from `context.md`.
 - If the user responds with `@worker there is an issue ...`, address the issue, append an updated report, and ask them to verify again.
 
-### Work Output (Append to `workflow.md`)
+### Work Output (Append to `context.md`)
 
 ```markdown
 ## Implementation Report: [Task Name]
@@ -167,8 +169,8 @@ After producing an implementation report, ask the user to verify the change.
 - **Security**: No secrets, validate input, check authorization
 - **Integration**: Ensure changes work with existing code
 - **Documentation**: Update relevant docs if needed
-- **Save work**: Always append to `.cursor/agent_output/workflow.md`
-- **Provide next agent**: Always set "Next Agent" in `workflow.md`
+- **Save work**: Always append to `.cursor/agent_output/context.md`
+- **Provide next agent**: Always set "Next Agent" in `context.md`
 
 ## When Blocked
 
@@ -188,7 +190,7 @@ When responding after implementation, output ONLY:
 Test the change now
 ```
 
-When the user responds with `@worker verified`, output ONLY a single line containing the next agent handle from `workflow.md`, e.g.:
+When the user responds with `@worker verified`, output ONLY a single line containing the next agent handle from `context.md`, e.g.:
 
 ```
 @reviewer
