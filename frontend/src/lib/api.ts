@@ -22,10 +22,13 @@ interface TokenResponse {
   token_type: string;
 }
 
+type SubscriptionTier = 'free' | 'pro';
+
 interface UserResponse {
   id: number;
   username: string;
   email: string;
+  subscription_tier: SubscriptionTier;
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +69,21 @@ function isStorageResult(obj: unknown): obj is { authToken?: string } {
 }
 
 /**
+ * Safely read auth token from localStorage when available.
+ */
+function getLocalStorageToken(): string | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  try {
+    return localStorage.getItem('authToken');
+  } catch (error) {
+    console.warn('[API] Failed to read auth token from localStorage:', error);
+    return null;
+  }
+}
+
+/**
  * Get the stored auth token from browser.storage.local.
  * Uses the WebExtensions API (browser-agnostic).
  */
@@ -73,12 +91,12 @@ async function getToken(): Promise<string | null> {
   try {
     const result = await browser.storage.local.get('authToken');
     if (isStorageResult(result)) {
-      return result.authToken || null;
+      return result.authToken || getLocalStorageToken();
     }
-    return null;
+    return getLocalStorageToken();
   } catch (error) {
     console.warn('[API] Failed to access browser.storage, falling back to localStorage:', error);
-    return localStorage.getItem('authToken');
+    return getLocalStorageToken();
   }
 }
 
@@ -90,8 +108,15 @@ async function setToken(token: string): Promise<void> {
   try {
     await browser.storage.local.set({ authToken: token });
   } catch (error) {
-    console.warn('[API] Failed to access browser.storage, falling back to localStorage:', error);
-    localStorage.setItem('authToken', token);
+    console.warn('[API] Failed to access browser.storage:', error);
+  }
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem('authToken', token);
+    } catch (error) {
+      console.warn('[API] Failed to store auth token in localStorage:', error);
+    }
   }
 }
 
@@ -106,11 +131,12 @@ async function removeToken(): Promise<void> {
     console.warn('[API] Failed to clear browser.storage:', error);
   }
 
-  // Also clear localStorage in case it was used as fallback
-  try {
-    localStorage.removeItem('authToken');
-  } catch (error) {
-    console.warn('[API] Failed to clear localStorage:', error);
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.removeItem('authToken');
+    } catch (error) {
+      console.warn('[API] Failed to clear localStorage:', error);
+    }
   }
 }
 
@@ -153,6 +179,11 @@ async function apiRequest<T>(
       throw new Error('Authentication expired. Please log in again.');
     }
     // For auth endpoints, fall through to general error handling below
+  }
+
+  if (response.status === 403) {
+    const error: ApiError = await response.json().catch(() => ({ detail: 'Access denied' }));
+    throw new Error(error.detail || 'Access denied');
   }
 
   if (!response.ok) {
@@ -340,10 +371,12 @@ export async function deleteRule(id: number): Promise<void> {
  * @deprecated Use streamTextToSpeechProgressive for true streaming playback
  */
 export async function streamTextToSpeech(text: string): Promise<Blob> {
+  const token = await getToken();
   const response = await fetch(`${API_BASE_URL}/stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ text }),
   });
@@ -369,10 +402,12 @@ export async function streamTextToSpeechProgressive(
   text: string,
   signal?: AbortSignal
 ): Promise<ReadableStream<Uint8Array>> {
+  const token = await getToken();
   const response = await fetch(`${API_BASE_URL}/stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ text }),
     signal,

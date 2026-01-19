@@ -11,14 +11,14 @@ from src.database import get_db
 from src.models.user import User
 from src.models.rule import Rule
 from src.schemas.rule import RuleCreate, RuleUpdate, RuleResponse
-from src.dependencies import get_current_user
+from src.dependencies import require_pro_user
 
 router = APIRouter()
 
 
 @router.get("", response_model=list[RuleResponse])
 async def get_rules(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_pro_user),
     db: AsyncSession = Depends(get_db)
 ) -> list[RuleResponse]:
     """
@@ -35,7 +35,7 @@ async def get_rules(
 @router.post("", response_model=RuleResponse, status_code=status.HTTP_201_CREATED)
 async def create_rule(
     rule_data: RuleCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_pro_user),
     db: AsyncSession = Depends(get_db)
 ) -> RuleResponse:
     """
@@ -59,7 +59,7 @@ async def create_rule(
 @router.get("/{rule_id}", response_model=RuleResponse)
 async def get_rule(
     rule_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_pro_user),
     db: AsyncSession = Depends(get_db)
 ) -> RuleResponse:
     """
@@ -87,7 +87,7 @@ async def get_rule(
 async def update_rule(
     rule_id: int,
     rule_data: RuleUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_pro_user),
     db: AsyncSession = Depends(get_db)
 ) -> RuleResponse:
     """
@@ -122,7 +122,7 @@ async def update_rule(
 @router.delete("/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_rule(
     rule_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_pro_user),
     db: AsyncSession = Depends(get_db)
 ) -> None:
     """

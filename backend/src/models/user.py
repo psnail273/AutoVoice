@@ -3,7 +3,7 @@ User model for authentication and account management.
 """
 
 from datetime import datetime
-from sqlalchemy import String, DateTime, func
+from sqlalchemy import String, DateTime, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 
@@ -20,6 +20,11 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    subscription_tier: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        server_default=text("'free'")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

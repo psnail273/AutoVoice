@@ -53,3 +53,26 @@ async def get_current_user(
     
     return user
 
+
+async def require_pro_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Dependency to ensure the current user has a Pro subscription.
+    
+    Args:
+        current_user: Authenticated user from get_current_user.
+    
+    Returns:
+        The authenticated User object if subscription is Pro.
+    
+    Raises:
+        HTTPException 403: If the user is not on the Pro tier.
+    """
+    if current_user.subscription_tier != "pro":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Pro subscription required"
+        )
+    return current_user
+

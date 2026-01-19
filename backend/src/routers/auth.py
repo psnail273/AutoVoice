@@ -68,7 +68,8 @@ async def signup(
         new_user = User(
             username=user_data.username,
             email=user_data.email,
-            hashed_password=hash_password(user_data.password)
+            hashed_password=hash_password(user_data.password),
+            subscription_tier="free"
         )
 
         db.add(new_user)

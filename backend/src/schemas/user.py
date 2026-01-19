@@ -3,6 +3,7 @@ Pydantic schemas for user authentication.
 """
 
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from zxcvbn import zxcvbn
 
@@ -50,11 +51,15 @@ class UserLogin(BaseModel):
     password: str = Field(description="User password")
 
 
+SubscriptionTier = Literal["free", "pro"]
+
+
 class UserResponse(BaseModel):
     """Schema for user data in responses."""
     id: int
     username: str
     email: str
+    subscription_tier: SubscriptionTier
     created_at: datetime
     updated_at: datetime
 

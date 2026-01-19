@@ -4,7 +4,7 @@ Main FastAPI application entry point.
 
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
@@ -15,6 +15,8 @@ from slowapi.errors import RateLimitExceeded
 from src.tts.kokoro.utils import text_to_wav, stream_audio_chunks, stream_audio_chunks_mp3
 from src.routers import auth, rules
 from src.config import settings
+from src.dependencies import require_pro_user
+from src.models.user import User
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 os.environ["DISPLAY"] = ""
@@ -70,7 +72,10 @@ class TextToConvert(BaseModel):
 
 
 @app.post("/text", tags=["Text-to-Speech"])
-async def convert_text(text_to_convert: TextToConvert) -> Response:
+async def convert_text(
+    text_to_convert: TextToConvert,
+    _current_user: User = Depends(require_pro_user)
+) -> Response:
     """
     Convert text to speech and return as WAV audio.
     
@@ -84,7 +89,10 @@ async def convert_text(text_to_convert: TextToConvert) -> Response:
 
 
 @app.post("/stream", tags=["Text-to-Speech"])
-async def stream_text(text_to_convert: TextToConvert) -> StreamingResponse:
+async def stream_text(
+    text_to_convert: TextToConvert,
+    _current_user: User = Depends(require_pro_user)
+) -> StreamingResponse:
     """
     Stream text-to-speech audio as MP3 format (128kbps, mono, 24kHz).
 

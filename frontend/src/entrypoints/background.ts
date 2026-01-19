@@ -19,6 +19,29 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+function getLocalStorageToken(): string | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  try {
+    return localStorage.getItem('authToken');
+  } catch (error) {
+    console.warn('[Background] Failed to read auth token from localStorage:', error);
+    return null;
+  }
+}
+
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const result = await browser.storage.local.get('authToken');
+    const token = typeof result.authToken === 'string' ? result.authToken : null;
+    return token || getLocalStorageToken();
+  } catch (error) {
+    console.warn('[Background] Failed to read auth token from storage:', error);
+    return getLocalStorageToken();
+  }
+}
+
 export default defineBackground(() => {
   console.log('AutoVoice background script loaded', { id: browser.runtime.id });
 
@@ -50,9 +73,13 @@ export default defineBackground(() => {
         console.log('[Background] Starting audio stream for text length:', text.length);
 
         try {
+          const token = await getAuthToken();
           const response = await fetch(`${API_BASE_URL}/stream`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({ text }),
             signal: abortController.signal,
           });

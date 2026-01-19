@@ -4,6 +4,7 @@ import { SignIn, SignUp } from '@/components/auth';
 import { AudioControllerProvider } from '@/hooks/use-audio-controller';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogOut, User } from 'lucide-react';
 
 /**
@@ -12,6 +13,7 @@ import { LogOut, User } from 'lucide-react';
 function AppContent() {
   const { isLoading, isLoggedIn, user, logout } = useAuth();
   const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
+  const isFreeTier = user?.subscription_tier === 'free';
 
   // Show loading state while checking initial auth status
   if (isLoading.initial) {
@@ -55,9 +57,22 @@ function AppContent() {
 
       { /* Main content */ }
       <div className="flex-1 ">
-        <AudioControllerProvider>
-          <NavMenu />
-        </AudioControllerProvider>
+        { isFreeTier ? (
+          <div className="p-4">
+            <Card className="border-amber-500/40 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Upgrade required</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Your account is on the Free tier. Please upgrade to Pro to use AutoVoice features.
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <AudioControllerProvider>
+            <NavMenu />
+          </AudioControllerProvider>
+        ) }
       </div>
     </div>
   );
