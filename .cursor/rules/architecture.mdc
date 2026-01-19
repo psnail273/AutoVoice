@@ -1,0 +1,299 @@
+---
+description: Project architecture overview - how frontend and backend work together
+alwaysApply: false
+---
+# AutoVoice Architecture
+
+## Overview
+
+AutoVoice is a browser extension that converts web page content to speech using a custom TTS backend. Users can define "rules" that specify which parts of a page to read using CSS selectors, enabling targeted content extraction and audio generation.
+
+---
+
+## System Components
+
+### Backend (`/backend`)
+
+**Framework**: FastAPI (Python 3.12+)
+**Database**: Neon Postgres via SQLAlchemy 2.0 async + asyncpg
+**TTS Engine**: Kokoro TTS (local neural TTS)
+
+#### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/main.py` | FastAPI app entry point, TTS endpoints, middleware config |
+| `src/database.py` | Async SQLAlchemy engine, session factory, Base class |
+| `src/config.py` | Settings from environment variables (JWT, CORS, DB) |
+| `src/dependencies.py` | `get_current_user` dependency for protected routes |
+
+#### API Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/auth/signup` | POST | No | Create account, returns JWT |
+| `/auth/login` | POST | No | Authenticate, returns JWT |
+| `/auth/me` | GET | Yes | Get current user profile |
+| `/rules` | GET | Yes | List user's rules |
+| `/rules` | POST | Yes | Create new rule |
+| `/rules/{id}` | GET/PUT/DELETE | Yes | CRUD single rule |
+| `/text` | POST | No | Convert text to WAV (full file) |
+| `/stream` | POST | No | Stream text as MP3 chunks |
+| `/health` | GET | No | Health check |
+
+#### Data Models
+
+**User** (`src/models/user.py`)
+- `id`, `username`, `email`, `hashed_password`
+- Has many Rules (cascade delete)
+
+**Rule** (`src/models/rule.py`)
+- `id`, `user_id`, `url_pattern`
+- `keep_selectors[]` - CSS selectors for content to extract
+- `ignore_selectors[]` - CSS selectors to exclude
+- `enabled`, `auto_extract` - flags for rule behavior
+
+#### Authentication Flow
+1. Password hashed with bcrypt on signup
+2. JWT token created with user ID in `sub` claim
+3. Token sent in `Authorization: Bearer <token>` header
+4. `get_current_user` dependency validates token, fetches user
+
+---
+
+### Frontend (`/frontend`)
+
+**Framework**: WXT browser extension framework
+**UI**: React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui
+**Build**: Vite
+
+#### Extension Entry Points
+
+| File | Context | Purpose |
+|------|---------|---------|
+| `src/entrypoints/popup/App.tsx` | Popup | Main UI (auth, rules, playback controls) |
+| `src/entrypoints/background.ts` | Background | Audio stream proxy, cross-tab coordination, context menus |
+| `src/entrypoints/content.ts` | Content | DOM interaction, text extraction, audio playback |
+
+#### Key Libraries
+
+| File | Purpose |
+|------|---------|
+| `src/lib/api.ts` | Backend API client, token management, rules cache |
+| `src/lib/messages.ts` | TypeScript types for extension message passing |
+| `src/lib/content-audio-player.ts` | MediaSource streaming audio player |
+
+#### React Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `use-auth.tsx` | Auth state, login/signup/logout |
+| `use-audio-controller.tsx` | Audio playback state, control commands |
+| `use-rules.tsx` | Rules CRUD with caching |
+
+---
+
+## Data Flow Diagrams
+
+### Authentication Flow
+
+```
+┌─────────┐     POST /auth/login      ┌─────────┐
+│  Popup  │ ────────────────────────► │ Backend │
+│  (React)│                           │ FastAPI │
+│         │ ◄──────────────────────── │         │
+└─────────┘     { access_token }      └─────────┘
+     │
+     │ store in browser.storage.local
+     ▼
+┌─────────────────────────┐
+│ browser.storage.local   │
+│ { authToken: "..." }    │
+└─────────────────────────┘
+```
+
+### Text-to-Speech Flow
+
+```
+┌──────────┐  1. loadAndPlay()   ┌────────────┐
+│  Popup   │ ──────────────────► │ Background │
+└──────────┘                     └────────────┘
+                                       │
+                                       │ 2. AUDIO_LOAD_COMMAND
+                                       ▼
+                                ┌──────────────┐
+                                │Content Script│
+                                └──────────────┘
+                                       │
+     3. EXTRACT_TEXT                   │
+     (get page content)                │
+                                       ▼
+                                ┌──────────────┐
+                                │  Page DOM    │
+                                │ (selectors)  │
+                                └──────────────┘
+                                       │
+                                       │ 4. extracted text
+                                       ▼
+┌──────────────┐  5. port: start  ┌────────────┐
+│Content Script│ ───────────────► │ Background │
+│(AudioPlayer) │                  │  (proxy)   │
+└──────────────┘                  └────────────┘
+                                       │
+                                       │ 6. POST /stream
+                                       ▼
+                                 ┌─────────┐
+                                 │ Backend │
+                                 │  (TTS)  │
+                                 └─────────┘
+                                       │
+                                       │ 7. MP3 chunks
+                                       ▼
+┌──────────────┐  8. port: chunk  ┌────────────┐
+│Content Script│ ◄─────────────── │ Background │
+│(MediaSource) │                  └────────────┘
+└──────────────┘
+       │
+       │ 9. AUDIO_STATE_UPDATE
+       ▼
+┌──────────────┐
+│   Popup      │ (updates UI)
+└──────────────┘
+```
+
+### Why Background Proxies Audio
+
+Content scripts cannot directly fetch from the backend due to CORS restrictions. The background script acts as a proxy:
+1. Content script connects via `browser.runtime.connect()`
+2. Background fetches from `/stream` endpoint
+3. Background forwards chunks back through the port
+4. Content script feeds chunks to MediaSource API
+
+---
+
+## Message Types Reference
+
+All messages defined in `src/lib/messages.ts`:
+
+| Message Type | Direction | Purpose |
+|--------------|-----------|---------|
+| `GET_SELECTOR_FOR_SELECTION` | Background → Content | Get CSS selector for right-clicked element |
+| `EXTRACT_TEXT` | Popup → Content | Extract text using rule selectors |
+| `AUDIO_LOAD` | Any → Content | Load and play audio from text |
+| `AUDIO_PLAY/PAUSE/STOP` | Any → Content | Playback control |
+| `AUDIO_STATE_UPDATE` | Content → Background/Popup | Broadcast current state |
+| `AUDIO_COMMAND` | Popup → Background | Route command to active audio tab |
+| `AUDIO_LOAD_COMMAND` | Popup → Background | Load audio on specific tab |
+| `AUDIO_GET_GLOBAL_STATE` | Popup → Background | Get current audio state |
+
+---
+
+## Rules System
+
+Rules define how to extract content from specific websites:
+
+```typescript
+interface Rule {
+  url_pattern: string;      // e.g., "https://example.com/*"
+  keep_selectors: string[]; // CSS selectors to extract
+  ignore_selectors: string[]; // CSS selectors to exclude
+  enabled: boolean;
+  auto_extract: boolean;
+}
+```
+
+**Extraction Algorithm** (in `content.ts`):
+1. If `keep_selectors` provided, query those elements
+2. Clone each element (avoid DOM mutation)
+3. Remove any `ignore_selectors` from clones
+4. Extract and combine `textContent`
+5. Clean whitespace
+
+---
+
+## Environment Variables
+
+### Backend (`.env.local`)
+
+See `backend/.env.example` for a template.
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | Neon Postgres connection string |
+| `SECRET_KEY` | JWT signing key (min 32 chars) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT expiry (default: 1440) |
+| `CORS_ORIGINS` | Comma-separated allowed origins |
+| `RESEND_KEY` | Resend API key for email service |
+| `RESEND_DOMAIN` | Domain configured in Resend for sending emails |
+
+### Frontend
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_API_URL` | Backend URL (default: http://localhost:8000) |
+
+Note: Frontend environment variables are set in `.env` (not committed).
+
+---
+
+## Storage Keys
+
+Browser extension storage (`browser.storage.local`):
+
+| Key | Purpose |
+|-----|---------|
+| `authToken` | JWT access token |
+| `cachedRules` | Offline rules cache |
+| `pendingRule` | Pre-fill data for AddRule form |
+| `audioPlaybackState` | Persisted audio state |
+
+---
+
+## Adding New Features
+
+### Adding a New API Endpoint
+
+1. Create/update router in `backend/src/routers/`
+2. Add Pydantic schemas in `backend/src/schemas/`
+3. Register router in `backend/src/main.py` if new file
+4. Add API function in `frontend/src/lib/api.ts`
+5. Create/update React hook if stateful
+
+### Adding a New Extension Message
+
+1. Define message interface in `frontend/src/lib/messages.ts`
+2. Add to `ExtensionMessage` union type
+3. Handle in `background.ts` and/or `content.ts`
+4. Use from popup via `browser.runtime.sendMessage()`
+
+### Adding a New Database Model
+
+1. Create model in `backend/src/models/`
+2. Add relationship to existing models if needed
+3. Create Alembic migration: `alembic revision --autogenerate -m "description"`
+4. Run migration: `alembic upgrade head`
+5. Create schemas in `backend/src/schemas/`
+6. Create router in `backend/src/routers/`
+
+### Adding a New UI Component
+
+1. Create component in `frontend/src/components/`
+2. Use shadcn/ui primitives from `@/components/ui/`
+3. Extract reusable logic into hooks in `frontend/src/hooks/`
+4. Import in parent component or add to NavMenu tabs
+
+---
+
+## Current Feature Status
+
+<!-- Update this section as features are added/modified -->
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| User authentication | ✅ Complete | JWT-based, bcrypt passwords |
+| Rules CRUD | ✅ Complete | Per-user, with caching |
+| Text extraction | ✅ Complete | CSS selector based |
+| TTS streaming | ✅ Complete | MP3 via MediaSource API |
+| Cross-tab audio control | ✅ Complete | Background coordinates |
+| Context menu rule creation | ✅ Complete | Right-click to create rule |
+| Context menu TTS | ✅ Complete | Right-click selected text |

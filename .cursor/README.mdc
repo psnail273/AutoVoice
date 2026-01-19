@@ -1,0 +1,216 @@
+# Agent System Documentation
+
+This directory contains the agent system for coordinating feature development in the AutoVoice project.
+
+## Overview
+
+The agent system enables structured feature development by breaking down tasks, delegating to specialized agents, and ensuring quality through reviews.
+
+## Structure
+
+```
+.cursor/
+├── agents/          # Agent definitions
+├── rules/           # Project rules and guidelines
+├── skills/          # Reusable capabilities
+└── README.mdc       # This file
+```
+
+## Agents
+
+### Coordinator (`agents/coordinator.mdc`)
+**Role**: Orchestrates feature development
+- Breaks down features into tasks
+- Delegates to worker, reviewer, and security agents
+- Synthesizes final reports
+
+**Use when**: Starting a new feature or coordinating multiple tasks
+
+### Worker (`agents/worker.mdc`)
+**Role**: Implements code changes
+- Writes backend and frontend code
+- Follows project patterns and standards
+- Produces implementation reports
+
+**Use when**: Implementing specific tasks assigned by coordinator
+
+### Reviewer (`agents/reviewer.mdc`)
+**Role**: Reviews code quality
+- Checks adherence to coding standards
+- Verifies integration correctness
+- Ensures completeness
+
+**Use when**: Reviewing implementation reports or code changes
+
+### Security (`agents/security.mdc`)
+**Role**: Security-focused review
+- Identifies vulnerabilities
+- Verifies secure coding practices
+- Checks compliance with security standards
+
+**Use when**: Reviewing code for security issues or auditing features
+
+## Rules
+
+### Architecture (`rules/architecture.mdc`)
+**Purpose**: System overview and how components work together
+- Project structure
+- Data flow diagrams
+- Component relationships
+- Adding new features guide
+
+**Read by**: All agents to understand the codebase
+
+### Backend (`rules/backend.mdc`)
+**Purpose**: Backend development guidelines
+- FastAPI patterns
+- Database practices
+- Python style guide
+- API design standards
+
+**Read by**: Worker (backend tasks), Reviewer (backend review)
+
+### Frontend (`rules/frontend.mdc`)
+**Purpose**: Frontend development guidelines
+- React/TypeScript patterns
+- WXT extension specifics
+- Tailwind CSS usage
+- Component structure
+
+**Read by**: Worker (frontend tasks), Reviewer (frontend review)
+
+### General (`rules/general.mdc`)
+**Purpose**: Universal coding standards
+- Code quality principles
+- Error handling
+- Security basics
+- Documentation standards
+
+**Read by**: All agents
+
+### Types (`rules/types.mdc`)
+**Purpose**: Agent communication formats
+- Input/output formats
+- Report structures
+- Status indicators
+- Common data types
+
+**Read by**: All agents for consistent communication
+
+## Skills
+
+Skills (`skills/`) provide reusable capabilities and patterns:
+- Common implementation approaches
+- Code templates
+- Best practices
+- Domain-specific techniques
+
+See `skills/README.mdc` for details.
+
+## Workflow
+
+### Feature Development Flow
+
+```
+1. User provides feature description
+   ↓
+2. Coordinator analyzes and breaks down into tasks
+   ↓
+3. Coordinator assigns tasks to Worker
+   ↓
+4. Worker implements and produces report
+   ↓
+5. Coordinator assigns Reviewer to check quality
+   ↓
+6. Coordinator assigns Security to check security
+   ↓
+7. Coordinator synthesizes final report
+   ↓
+8. User reviews and approves
+```
+
+### Agent Interaction
+
+```
+Coordinator
+  ├─→ Worker (implementation)
+  ├─→ Reviewer (quality check)
+  └─→ Security (security check)
+  
+All agents reference:
+  ├─→ Architecture rules
+  ├─→ Backend/Frontend rules
+  ├─→ General rules
+  └─→ Types for communication
+```
+
+## Usage Examples
+
+### Starting a Feature
+
+```
+@coordinator I want to add user profile editing functionality
+```
+
+The coordinator will:
+1. Analyze the feature
+2. Break it into tasks
+3. Create a plan
+4. Delegate to worker
+
+### Reviewing Code
+
+```
+@reviewer Review the implementation report for [feature]
+```
+
+The reviewer will:
+1. Check code quality
+2. Verify standards compliance
+3. Provide feedback
+4. Approve or request changes
+
+### Security Audit
+
+```
+@security Review [feature] for security issues
+```
+
+Security will:
+1. Check for vulnerabilities
+2. Verify secure practices
+3. Provide risk assessment
+4. Recommend fixes
+
+## Best Practices
+
+1. **Always start with Coordinator** for new features
+2. **Reference rules** when implementing or reviewing
+3. **Use standardized formats** from types.mdc
+4. **Check dependencies** before starting tasks
+5. **Review before merging** - use Reviewer and Security
+
+## Adding New Agents
+
+To add a new agent:
+1. Create `agents/[name].mdc`
+2. Define role and responsibilities
+3. Specify input/output formats
+4. Reference relevant rules
+5. Update this README
+
+## Adding New Rules
+
+To add a new rule:
+1. Create `rules/[name].mdc`
+2. Use frontmatter for metadata
+3. Keep it focused and actionable
+4. Reference from relevant agents
+5. Update this README
+
+## Questions?
+
+- Check agent definitions in `agents/`
+- Review rules in `rules/`
+- See types for communication formats
+- Reference architecture for system understanding

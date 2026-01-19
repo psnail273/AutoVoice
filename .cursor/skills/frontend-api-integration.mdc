@@ -1,0 +1,126 @@
+# Frontend API Integration Skill
+
+Pattern for integrating backend APIs in the frontend React application.
+
+## Pattern
+
+### 1. Add API Function
+
+In `frontend/src/lib/api.ts`:
+
+```typescript
+/**
+ * Create a new item.
+ */
+export async function createItem(
+  item: ItemCreate
+): Promise<ItemResponse> {
+  return apiRequest<ItemResponse>('/items', {
+    method: 'POST',
+    body: JSON.stringify(item),
+  });
+}
+
+/**
+ * Get all items for the current user.
+ */
+export async function getItems(): Promise<ItemResponse[]> {
+  return apiRequest<ItemResponse[]>('/items');
+}
+```
+
+### 2. Create Hook (if stateful)
+
+In `frontend/src/hooks/use-items.tsx`:
+
+```typescript
+import { useState, useEffect } from 'react';
+import { getItems, createItem, ItemResponse, ItemCreate } from '@/lib/api';
+
+export function useItems() {
+  const [items, setItems] = useState<ItemResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadItems = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getItems();
+      setItems(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addItem = async (item: ItemCreate) => {
+    try {
+      const newItem = await createItem(item);
+      setItems(prev => [...prev, newItem]);
+      return newItem;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create item');
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  return { items, loading, error, addItem, refresh: loadItems };
+}
+```
+
+### 3. Use in Component
+
+```typescript
+import { useItems } from '@/hooks/use-items';
+
+export function ItemsList() {
+  const { items, loading, error, addItem } = useItems();
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (items.length === 0) return <div>No items found</div>;
+
+  return (
+    <div>
+      {items.map(item => (
+        <div key={item.id}>{item.name}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Checklist
+
+- [ ] API function added to `api.ts`
+- [ ] TypeScript types defined
+- [ ] Hook created if stateful logic needed
+- [ ] Loading state handled
+- [ ] Error state handled
+- [ ] Empty state handled
+- [ ] Component uses hook correctly
+- [ ] Error messages are user-friendly
+
+## Error Handling Pattern
+
+```typescript
+try {
+  await apiCall();
+} catch (err) {
+  const message = err instanceof Error 
+    ? err.message 
+    : 'An unexpected error occurred';
+  // Show to user or log
+}
+```
+
+## References
+
+- `@.cursor/rules/frontend.mdc` - Frontend guidelines
+- `@.cursor/rules/architecture.mdc` - API structure

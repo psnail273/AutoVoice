@@ -1,0 +1,96 @@
+# Quick Start Guide
+
+## Using the Agent System
+
+### Starting a New Feature
+
+1. **Describe your feature** to the coordinator:
+   ```
+   @coordinator I want to add user profile editing functionality
+   ```
+
+2. **Coordinator will**:
+   - Break down the feature into tasks
+   - Create an implementation plan
+   - Delegate to worker agent
+
+3. **Worker implements** and produces a report
+
+4. **Reviews happen automatically**:
+   - Reviewer checks code quality
+   - Security checks for vulnerabilities
+
+5. **Coordinator synthesizes** final report
+
+### Reviewing Code
+
+```
+@reviewer Review the implementation report for [feature name]
+```
+
+### Security Check
+
+```
+@security Review [feature/change] for security issues
+```
+
+## Agent Roles
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| **Coordinator** | Orchestrates feature development | Starting new features |
+| **Worker** | Implements code | Assigned by coordinator |
+| **Reviewer** | Code quality review | After implementation |
+| **Security** | Security review | After implementation or on request |
+
+## Key Rules
+
+- **Architecture** (`rules/architecture.mdc`): System overview
+- **Backend** (`rules/backend.mdc`): Backend coding standards
+- **Frontend** (`rules/frontend.mdc`): Frontend coding standards
+- **General** (`rules/general.mdc`): Universal coding standards
+- **Types** (`rules/types.mdc`): Communication formats
+
+## Skills
+
+Reusable patterns in `skills/`:
+- `backend-api-endpoint.mdc`: Creating API endpoints
+- `frontend-api-integration.mdc`: Integrating APIs in frontend
+
+## Example Workflow
+
+```
+User: "Add dark mode toggle"
+
+Coordinator:
+  → Analyzes feature
+  → Creates task plan:
+     1. Add theme state management
+     2. Create toggle component
+     3. Persist preference
+  → Assigns to Worker
+
+Worker:
+  → Implements each task
+  → Produces implementation report
+
+Reviewer:
+  → Checks code quality
+  → Approves or requests changes
+
+Security:
+  → Checks for security issues
+  → Approves or flags concerns
+
+Coordinator:
+  → Synthesizes final report
+  → Reports completion
+```
+
+## Tips
+
+1. **Be specific** in feature descriptions
+2. **Check architecture rules** for system patterns
+3. **Follow types.mdc** for consistent reports
+4. **Use skills** for common patterns
+5. **Review before merging** - always use Reviewer and Security

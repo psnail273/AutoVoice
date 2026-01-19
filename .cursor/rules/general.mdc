@@ -1,8 +1,7 @@
 ---
 description: General coding guidelines for the AutoVoice project
-alwaysApply: true
+alwaysApply: false
 ---
-
 # General Guidelines
 
 ## Code Quality

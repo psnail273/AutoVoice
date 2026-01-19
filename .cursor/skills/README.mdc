@@ -1,0 +1,47 @@
+# Agent Skills
+
+Skills are reusable capabilities that agents can reference to perform specific tasks efficiently.
+
+## Purpose
+
+Skills provide:
+- **Reusable patterns**: Common implementation approaches
+- **Best practices**: Proven solutions to recurring problems
+- **Code templates**: Starting points for common tasks
+- **Domain knowledge**: Specific techniques for this codebase
+
+## Skill Categories
+
+### Backend Skills
+- Database operations
+- API endpoint patterns
+- Authentication/authorization
+- Error handling patterns
+
+### Frontend Skills
+- Component patterns
+- State management
+- API integration
+- Browser extension APIs
+
+### Integration Skills
+- Frontend-backend communication
+- Message passing
+- Error propagation
+- State synchronization
+
+## Usage
+
+Agents should reference skills when:
+- Implementing common patterns
+- Following established practices
+- Needing code templates
+- Learning domain-specific techniques
+
+## Adding Skills
+
+When creating a new skill:
+1. Create a `.mdc` file in the appropriate category
+2. Include clear examples
+3. Reference related rules
+4. Keep it focused and actionable

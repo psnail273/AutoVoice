@@ -1,0 +1,307 @@
+---
+description: Input/output formats for agent communication
+alwaysApply: false
+---
+
+# Agent Communication Types
+
+Standardized input and output formats for agent-to-agent communication.
+
+## Feature Request (Input to Coordinator)
+
+```markdown
+## Feature: [Feature Name]
+
+### Description
+[Natural language description of what needs to be built]
+
+### Requirements
+- [ ] Requirement 1
+- [ ] Requirement 2
+
+### Acceptance Criteria
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+### Notes
+[Any additional context, constraints, or considerations]
+```
+
+## Task Assignment (Coordinator → Worker)
+
+```markdown
+## Task: [Task Name]
+
+### Type
+Backend | Frontend | Fullstack | Integration
+
+### Description
+[Specific task to implement]
+
+### Requirements
+- [ ] Requirement 1
+- [ ] Requirement 2
+
+### Dependencies
+- Depends on: [Other task or feature]
+- Blocks: [Other task or feature]
+
+### Files to Create/Modify
+- `path/to/file` - Purpose
+
+### Related Files
+- `path/to/file` - Reference for patterns
+
+### Notes
+[Implementation hints, edge cases, or special considerations]
+```
+
+## Implementation Report (Worker → Coordinator/Reviewer)
+
+```markdown
+## Implementation Report: [Task Name]
+
+### Summary
+[1-2 sentence overview of what was implemented]
+
+### Status
+✅ Complete | ⏳ In Progress | ❌ Blocked
+
+### Changes
+
+#### Files Created
+- `path/to/file` - Purpose and key details
+
+#### Files Modified
+- `path/to/file` - What changed and why
+
+#### Migrations (if any)
+- `alembic/versions/YYYYMMDD_description.py` - Schema changes
+
+### API Changes (if any)
+
+| Endpoint | Method | Auth | Request Body | Response | Description |
+|----------|--------|------|--------------|----------|-------------|
+| `/path` | POST | Yes | `{field: type}` | `{field: type}` | What it does |
+
+### Verification Steps
+
+1. [How to test the feature]
+2. [Edge cases to verify]
+3. [Integration points to check]
+
+### Testing Notes
+- [What was tested]
+- [What still needs testing]
+
+### Notes
+- [Limitations]
+- [Follow-up work needed]
+- [Blockers or issues encountered]
+```
+
+## Review Report (Reviewer → Coordinator)
+
+```markdown
+## Code Review: [Feature/Task Name]
+
+### Overall Assessment
+✅ Approved | ⚠️ Needs Changes | ❌ Rejected
+
+### Findings
+
+#### ✅ Strengths
+- [What was done well]
+
+#### ⚠️ Issues Found
+
+1. **Severity: High/Medium/Low**
+   - **Location**: `path/to/file:line`
+   - **Issue**: [Description]
+   - **Suggestion**: [How to fix]
+
+### Checklist Status
+- [x] Code quality
+- [x] Backend rules compliance
+- [x] Frontend rules compliance
+- [x] Integration correctness
+- [x] Architecture compliance
+
+### Recommendations
+- [Action items before approval]
+- [Follow-up improvements]
+- [Testing suggestions]
+```
+
+## Security Review Report (Security → Coordinator)
+
+```markdown
+## Security Review: [Feature/Change Name]
+
+### Risk Assessment
+**Overall Risk**: Critical | High | Medium | Low | Informational
+
+### Findings
+
+#### Critical/High Severity Issues
+1. **Issue Title**
+   - **Severity**: Critical/High
+   - **Location**: `path/to/file:line`
+   - **Description**: [What the vulnerability is]
+   - **Impact**: [What could happen if exploited]
+   - **Recommendation**: [How to fix with code example]
+
+#### Medium/Low Severity Issues
+[Similar format]
+
+### Checklist Status
+- [x] Authentication & Authorization
+- [x] Input Validation
+- [x] Injection Prevention
+- [x] XSS Prevention
+- [x] Secrets Management
+- [x] Data Protection
+- [x] API Security
+- [x] Browser Extension Security
+- [x] Dependencies
+
+### Summary
+- [Overall security assessment]
+- [Prioritized action items]
+- [Security trade-offs to consider]
+
+### Approval Status
+✅ Approved | ⚠️ Needs Changes | ❌ Rejected
+```
+
+## Coordinator Final Report
+
+```markdown
+## Feature Completion Report: [Feature Name]
+
+### Summary
+[Brief overview of the feature and its implementation]
+
+### Implementation Status
+✅ Complete | ⏳ Partial | ❌ Failed
+
+### Task Breakdown
+
+#### Completed Tasks
+- ✅ Task 1: [Description]
+- ✅ Task 2: [Description]
+
+#### In Progress
+- ⏳ Task 3: [Description] - [Status]
+
+#### Blocked/Issues
+- ❌ Task 4: [Description] - [Reason]
+
+### Changes Summary
+
+#### Files Created
+- `path/to/file` - Purpose
+
+#### Files Modified
+- `path/to/file` - Changes
+
+#### Migrations
+- `migration_name` - Schema changes
+
+### Reviews Completed
+
+#### Security Review
+- **Status**: ✅ Approved | ⚠️ Needs Changes | ❌ Rejected
+- **Risk Level**: Critical | High | Medium | Low
+- **Issues**: [Count] critical, [Count] high, [Count] medium, [Count] low
+
+#### Code Quality Review
+- **Status**: ✅ Approved | ⚠️ Needs Changes | ❌ Rejected
+- **Issues Found**: [Count]
+- **Main Concerns**: [List]
+
+### Testing
+
+#### Manual Testing
+- [ ] Test case 1: [Description] - ✅ Pass | ❌ Fail
+- [ ] Test case 2: [Description] - ✅ Pass | ❌ Fail
+
+#### Integration Testing
+- [ ] Frontend ↔ Backend integration - ✅ Pass | ❌ Fail
+- [ ] Error handling - ✅ Pass | ❌ Fail
+
+### API Documentation (if applicable)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/path` | POST | Yes | Description |
+
+### Next Steps
+- [ ] Follow-up task 1
+- [ ] Follow-up task 2
+
+### Notes
+- [Limitations]
+- [Known issues]
+- [Future improvements]
+```
+
+## Common Data Types
+
+### Backend API Types
+
+```python
+# Request Body Example
+class CreateRuleRequest(BaseModel):
+    url_pattern: str
+    keep_selectors: list[str] = []
+    ignore_selectors: list[str] = []
+    enabled: bool = True
+    auto_extract: bool = False
+
+# Response Example
+class RuleResponse(BaseModel):
+    id: int
+    user_id: int
+    url_pattern: str
+    keep_selectors: list[str]
+    ignore_selectors: list[str]
+    enabled: bool
+    auto_extract: bool
+    created_at: datetime
+    updated_at: datetime
+```
+
+### Frontend API Types
+
+```typescript
+// Request Type
+interface RuleCreate {
+  url_pattern: string;
+  keep_selectors?: string[];
+  ignore_selectors?: string[];
+  enabled?: boolean;
+  auto_extract?: boolean;
+}
+
+// Response Type
+interface RuleResponse {
+  id: number;
+  user_id: number;
+  url_pattern: string;
+  keep_selectors: string[];
+  ignore_selectors: string[];
+  enabled: boolean;
+  auto_extract: boolean;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+## Status Indicators
+
+Use consistent status indicators:
+- ✅ Complete/Approved/Pass
+- ⏳ In Progress/Pending
+- ❌ Failed/Rejected/Blocked
+- ⚠️ Needs Attention/Warning

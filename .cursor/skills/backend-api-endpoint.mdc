@@ -1,0 +1,91 @@
+# Backend API Endpoint Skill
+
+A reusable pattern for creating new API endpoints in the FastAPI backend.
+
+## Pattern
+
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
+from src.database import get_db
+from src.dependencies import get_current_user
+from src.models.user import User
+
+router = APIRouter()
+
+# Request/Response schemas
+class CreateItemRequest(BaseModel):
+    name: str
+    description: str | None = None
+
+class ItemResponse(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+# Endpoint
+@router.post("/items", status_code=status.HTTP_201_CREATED)
+async def create_item(
+    request: CreateItemRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> ItemResponse:
+    """
+    Create a new item for the current user.
+    
+    Requires authentication.
+    """
+    # Implementation
+    item = Item(
+        name=request.name,
+        description=request.description,
+        user_id=current_user.id
+    )
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    
+    return ItemResponse.model_validate(item)
+```
+
+## Checklist
+
+- [ ] Pydantic schemas for request/response
+- [ ] Router created or existing router used
+- [ ] Authentication dependency if protected
+- [ ] Database session dependency
+- [ ] Proper HTTP status codes
+- [ ] Error handling with HTTPException
+- [ ] Docstring describing the endpoint
+- [ ] Type hints on all parameters
+
+## Common Patterns
+
+### Protected Endpoint
+```python
+current_user: User = Depends(get_current_user)
+```
+
+### Database Operations
+```python
+async with db.begin():
+    # Transaction operations
+```
+
+### Error Handling
+```python
+if not item:
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Item not found"
+    )
+```
+
+## References
+
+- `@.cursor/rules/backend.mdc` - Backend guidelines
+- `@.cursor/rules/architecture.mdc` - API structure
