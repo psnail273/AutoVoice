@@ -99,15 +99,77 @@ Before writing code:
 
 ## Output Format
 
-See `@.cursor/rules/types.mdc` for the detailed implementation report format.
+You must provide TWO outputs:
 
-Your report must include:
-- Summary of what was implemented
-- List of files created/modified
-- Migration details (if any)
-- API changes (if any)
-- Verification steps
-- Notes on limitations or follow-ups
+### 1. Work Output (Save to `.cursor/agent_output/worker_implementation.md`)
+
+```markdown
+## Implementation Report: [Task Name]
+
+### Summary
+[1-2 sentence overview of what was implemented]
+
+### Status
+✅ Complete | ⏳ In Progress | ❌ Blocked
+
+### Changes
+
+#### Files Created
+- `path/to/file` - Purpose and key details
+
+#### Files Modified
+- `path/to/file` - What changed and why
+
+#### Migrations (if any)
+- `alembic/versions/YYYYMMDD_description.py` - Schema changes
+
+### API Changes (if any)
+
+| Endpoint | Method | Auth | Request Body | Response | Description |
+|----------|--------|------|--------------|----------|-------------|
+| `/path` | POST | Yes | `{field: type}` | `{field: type}` | What it does |
+
+### Verification Steps
+
+1. [How to test the feature]
+2. [Edge cases to verify]
+3. [Integration points to check]
+
+### Testing Notes
+- [What was tested]
+- [What still needs testing]
+
+### Notes
+- [Limitations]
+- [Follow-up work needed]
+- [Blockers or issues encountered]
+```
+
+### 2. Next Agent Prompt (Display to User)
+
+Provide a clear prompt that the user can copy and paste to invoke the reviewer agent:
+
+```
+@reviewer
+
+## Code Review Request: [Feature Name]
+
+Please review the following implementation:
+
+### Implementation Report
+[Paste the full implementation report from your work output above]
+
+### Files Changed
+[List all files that were created or modified]
+
+### Review Focus Areas
+- Code quality and adherence to project standards
+- Backend/frontend rules compliance
+- Integration correctness
+- Architecture compliance
+
+Please review the code changes and provide feedback. Save your review report to `.cursor/agent_output/reviewer_report.md` and provide a prompt for the security agent.
+```
 
 ## Requirements
 
@@ -116,6 +178,8 @@ Your report must include:
 - **Security**: No secrets, validate input, check authorization
 - **Integration**: Ensure changes work with existing code
 - **Documentation**: Update relevant docs if needed
+- **Save work**: Always save your implementation report to `.cursor/agent_output/worker_implementation.md`
+- **Provide prompt**: Always provide a ready-to-use prompt for the reviewer agent
 
 ## When Blocked
 

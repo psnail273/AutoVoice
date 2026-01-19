@@ -2,46 +2,116 @@
 
 ## Using the Agent System
 
+The agent system uses a **manual coordination workflow** where you act as the coordinator, passing outputs between specialized agents.
+
+### Workflow Overview
+
+```
+You → @coordinator (initializer) → Task Plan + Worker Prompt
+You → @worker → Implementation + Reviewer Prompt  
+You → @reviewer → Review Report + Security Prompt
+You → @security → Security Review + Coordinator Prompt
+You → @coordinator (synthesizer) → Final Report
+```
+
 ### Starting a New Feature
 
-1. **Describe your feature** to the coordinator:
+1. **Initialize the feature** with coordinator:
    ```
-   @coordinator I want to add user profile editing functionality
+   @coordinator I want to add subscription tier functionality with Free and Pro tiers
    ```
 
-2. **Coordinator will**:
-   - Break down the feature into tasks
-   - Create an implementation plan
-   - Delegate to worker agent
+2. **Coordinator will output**:
+   - Work saved to `.cursor/agent_output/coordinator_initialization.md`
+   - A ready-to-use prompt for the worker agent
 
-3. **Worker implements** and produces a report
+3. **Copy the worker prompt** and invoke:
+   ```
+   @worker
+   [Paste the prompt from coordinator]
+   ```
 
-4. **Reviews happen automatically**:
-   - Reviewer checks code quality
-   - Security checks for vulnerabilities
+4. **Worker will output**:
+   - Implementation saved to `.cursor/agent_output/worker_implementation.md`
+   - A ready-to-use prompt for the reviewer agent
 
-5. **Coordinator synthesizes** final report
+5. **Copy the reviewer prompt** and invoke:
+   ```
+   @reviewer
+   [Paste the prompt from worker]
+   ```
 
-### Reviewing Code
+6. **Reviewer will output**:
+   - Review saved to `.cursor/agent_output/reviewer_report.md`
+   - A ready-to-use prompt for the security agent
+
+7. **Copy the security prompt** and invoke:
+   ```
+   @security
+   [Paste the prompt from reviewer]
+   ```
+
+8. **Security will output**:
+   - Security review saved to `.cursor/agent_output/security_review.md`
+   - A ready-to-use prompt for coordinator (final synthesis)
+
+9. **Copy the coordinator prompt** and invoke:
+   ```
+   @coordinator
+   [Paste the prompt from security]
+   ```
+
+10. **Coordinator will output**:
+    - Final report saved to `.cursor/agent_output/coordinator_final_report.md`
+
+### Example Workflow
 
 ```
-@reviewer Review the implementation report for [feature name]
-```
+User: @coordinator Add dark mode toggle
 
-### Security Check
+Coordinator:
+  → Analyzes feature
+  → Creates task plan
+  → Saves to .cursor/agent_output/coordinator_initialization.md
+  → Provides prompt: "Copy this prompt and invoke @worker..."
 
-```
-@security Review [feature/change] for security issues
+User: @worker [pastes prompt]
+
+Worker:
+  → Implements dark mode
+  → Saves to .cursor/agent_output/worker_implementation.md
+  → Provides prompt: "Copy this prompt and invoke @reviewer..."
+
+User: @reviewer [pastes prompt]
+
+Reviewer:
+  → Reviews code quality
+  → Saves to .cursor/agent_output/reviewer_report.md
+  → Provides prompt: "Copy this prompt and invoke @security..."
+
+User: @security [pastes prompt]
+
+Security:
+  → Reviews security
+  → Saves to .cursor/agent_output/security_review.md
+  → Provides prompt: "Copy this prompt and invoke @coordinator..."
+
+User: @coordinator [pastes prompt]
+
+Coordinator:
+  → Synthesizes all reports
+  → Saves to .cursor/agent_output/coordinator_final_report.md
 ```
 
 ## Agent Roles
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| **Coordinator** | Orchestrates feature development | Starting new features |
-| **Worker** | Implements code | Assigned by coordinator |
-| **Reviewer** | Code quality review | After implementation |
-| **Security** | Security review | After implementation or on request |
+| **Coordinator** | Initializes features & synthesizes final reports | Start of feature, end of workflow |
+| **Worker** | Implements code | After coordinator initialization |
+| **Reviewer** | Code quality review | After worker implementation |
+| **Security** | Security review | After reviewer |
+| **Coordinator** | Final synthesis | After security review |
 
 ## Key Rules
 
@@ -57,40 +127,21 @@ Reusable patterns in `skills/`:
 - `backend-api-endpoint.mdc`: Creating API endpoints
 - `frontend-api-integration.mdc`: Integrating APIs in frontend
 
-## Example Workflow
+## Output Files
 
-```
-User: "Add dark mode toggle"
+All agent outputs are saved to `.cursor/agent_output/`:
+- `coordinator_initialization.md` - Feature breakdown
+- `worker_implementation.md` - Implementation report
+- `reviewer_report.md` - Code review
+- `security_review.md` - Security assessment
+- `coordinator_final_report.md` - Final synthesis
 
-Coordinator:
-  → Analyzes feature
-  → Creates task plan:
-     1. Add theme state management
-     2. Create toggle component
-     3. Persist preference
-  → Assigns to Worker
-
-Worker:
-  → Implements each task
-  → Produces implementation report
-
-Reviewer:
-  → Checks code quality
-  → Approves or requests changes
-
-Security:
-  → Checks for security issues
-  → Approves or flags concerns
-
-Coordinator:
-  → Synthesizes final report
-  → Reports completion
-```
+**Note**: The `.cursor/agent_output/` directory is gitignored.
 
 ## Tips
 
-1. **Be specific** in feature descriptions
-2. **Check architecture rules** for system patterns
-3. **Follow types.mdc** for consistent reports
-4. **Use skills** for common patterns
-5. **Review before merging** - always use Reviewer and Security
+1. **Copy prompts exactly** - Each agent provides a ready-to-use prompt for the next agent
+2. **Check output files** - Review saved reports to understand what each agent did
+3. **Follow the chain** - Always go: Coordinator → Worker → Reviewer → Security → Coordinator
+4. **Be specific** in feature descriptions to coordinator
+5. **Review outputs** before passing to next agent if needed

@@ -93,6 +93,10 @@ When reviewing the entire codebase:
 
 ## Output Format
 
+You must provide TWO outputs:
+
+### 1. Work Output (Save to `.cursor/agent_output/security_review.md`)
+
 ```markdown
 ## Security Review: [Feature/Change Name]
 
@@ -102,12 +106,13 @@ When reviewing the entire codebase:
 ### Findings
 
 #### Critical/High Severity Issues
+
 1. **Issue Title**
    - **Severity**: Critical/High
    - **Location**: `path/to/file:line`
-   - **Description**: What the vulnerability is
-   - **Impact**: What could happen if exploited
-   - **Recommendation**: How to fix (with code example if helpful)
+   - **Description**: [What the vulnerability is]
+   - **Impact**: [What could happen if exploited]
+   - **Recommendation**: [How to fix with code example]
 
 #### Medium/Low Severity Issues
 [Similar format]
@@ -124,12 +129,46 @@ When reviewing the entire codebase:
 - [x] Dependencies
 
 ### Summary
-- Overall security assessment
-- Prioritized action items
-- Security trade-offs to consider
+- [Overall security assessment]
+- [Prioritized action items]
+- [Security trade-offs to consider]
 
 ### Approval Status
 ✅ Approved | ⚠️ Needs Changes | ❌ Rejected
+```
+
+### 2. Next Agent Prompt (Display to User)
+
+Provide a clear prompt that the user can copy and paste to invoke the coordinator agent for final synthesis:
+
+```
+@coordinator
+
+## Final Synthesis Request: [Feature Name]
+
+Please synthesize the following reports into a final feature completion report:
+
+### Feature Initialization
+[Reference the coordinator's initialization report from `.cursor/agent_output/coordinator_initialization.md`]
+
+### Implementation Report
+[Reference the worker's implementation report from `.cursor/agent_output/worker_implementation.md`]
+
+### Code Review Report
+[Reference the reviewer's report from `.cursor/agent_output/reviewer_report.md`]
+
+### Security Review Report
+[Paste the full security review from your work output above]
+
+### Task
+Create a comprehensive final report that:
+- Summarizes the feature implementation
+- Consolidates all reviews
+- Provides testing checklist
+- Lists next steps
+- Documents any issues or blockers
+
+Save your final report to `.cursor/agent_output/coordinator_final_report.md`.
 ```
 
 ## Guidelines
@@ -141,6 +180,8 @@ When reviewing the entire codebase:
 - **Reference standards**: OWASP Top 10, CWE, security best practices
 - **No false positives**: Only flag real security issues
 - **If clean**: Explicitly state "No security issues found - Approved"
+- **Save work**: Always save your security review to `.cursor/agent_output/security_review.md`
+- **Provide prompt**: Always provide a ready-to-use prompt for the coordinator agent
 
 ## Approval Criteria
 

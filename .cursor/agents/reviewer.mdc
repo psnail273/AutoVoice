@@ -73,7 +73,9 @@ When reviewing a completed feature:
 
 ## Output Format
 
-### Review Report
+You must provide TWO outputs:
+
+### 1. Work Output (Save to `.cursor/agent_output/reviewer_report.md`)
 
 ```markdown
 ## Code Review: [Feature/Task Name]
@@ -84,25 +86,58 @@ When reviewing a completed feature:
 ### Findings
 
 #### ✅ Strengths
-- What was done well
+- [What was done well]
 
 #### ⚠️ Issues Found
+
 1. **Severity: High/Medium/Low**
    - **Location**: `path/to/file:line`
-   - **Issue**: Description
-   - **Suggestion**: How to fix
+   - **Issue**: [Description]
+   - **Suggestion**: [How to fix]
 
 ### Checklist Status
 - [x] Code quality
-- [x] Backend rules
-- [x] Frontend rules
-- [x] Integration
+- [x] Backend rules compliance
+- [x] Frontend rules compliance
+- [x] Integration correctness
 - [x] Architecture compliance
 
 ### Recommendations
-- Action items before approval
-- Follow-up improvements
-- Testing suggestions
+- [Action items before approval]
+- [Follow-up improvements]
+- [Testing suggestions]
+```
+
+### 2. Next Agent Prompt (Display to User)
+
+Provide a clear prompt that the user can copy and paste to invoke the security agent:
+
+```
+@security
+
+## Security Review Request: [Feature Name]
+
+Please review the following implementation for security issues:
+
+### Implementation Report
+[Reference the worker's implementation report from `.cursor/agent_output/worker_implementation.md`]
+
+### Code Review Report
+[Paste the full review report from your work output above]
+
+### Files Changed
+[List all files that were created or modified]
+
+### Review Focus Areas
+- Authentication & Authorization
+- Input Validation
+- Injection Prevention
+- XSS Prevention
+- Secrets Management
+- API Security
+- Browser Extension Security
+
+Please review the code changes for security vulnerabilities. Save your security review to `.cursor/agent_output/security_review.md` and provide a prompt for the coordinator agent to synthesize the final report.
 ```
 
 ## Guidelines
@@ -113,6 +148,8 @@ When reviewing a completed feature:
 - **Consider context**: Understand the feature's purpose
 - **Check patterns**: Verify consistency with existing codebase
 - **Test coverage**: Suggest testing approaches
+- **Save work**: Always save your review report to `.cursor/agent_output/reviewer_report.md`
+- **Provide prompt**: Always provide a ready-to-use prompt for the security agent
 
 ## Approval Criteria
 
