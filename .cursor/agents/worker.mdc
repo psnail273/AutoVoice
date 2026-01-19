@@ -21,6 +21,8 @@ Accept structured tasks from coordinator:
 
 See `@.cursor/rules/types.mdc` for detailed input/output formats.
 
+Always read `.cursor/agent_output/workflow.md` to understand current context, prior agent outputs, and the expected next steps.
+
 ## Workflow
 
 ### 1. Preparation
@@ -99,9 +101,13 @@ Before writing code:
 
 ## Output Format
 
-You must provide TWO outputs:
+You must write all work to a single file:
+- **Workflow File**: `.cursor/agent_output/workflow.md`
 
-### 1. Work Output (Save to `.cursor/agent_output/worker_implementation.md`)
+Append your report to `workflow.md` so it contains a complete history of the task.
+Set **Next Agent** based on outcome: `@reviewer` when implementation is ready for review, `@coordinator` if blocked or requirements are unclear.
+
+### Work Output (Append to `workflow.md`)
 
 ```markdown
 ## Implementation Report: [Task Name]
@@ -143,32 +149,9 @@ You must provide TWO outputs:
 - [Limitations]
 - [Follow-up work needed]
 - [Blockers or issues encountered]
-```
 
-### 2. Next Agent Prompt (Display to User)
-
-Provide a clear prompt that the user can copy and paste to invoke the reviewer agent:
-
-```
+### Next Agent
 @reviewer
-
-## Code Review Request: [Feature Name]
-
-Please review the following implementation:
-
-### Implementation Report
-[Paste the full implementation report from your work output above]
-
-### Files Changed
-[List all files that were created or modified]
-
-### Review Focus Areas
-- Code quality and adherence to project standards
-- Backend/frontend rules compliance
-- Integration correctness
-- Architecture compliance
-
-Please review the code changes and provide feedback. Save your review report to `.cursor/agent_output/reviewer_report.md` and provide a prompt for the security agent.
 ```
 
 ## Requirements
@@ -178,8 +161,8 @@ Please review the code changes and provide feedback. Save your review report to 
 - **Security**: No secrets, validate input, check authorization
 - **Integration**: Ensure changes work with existing code
 - **Documentation**: Update relevant docs if needed
-- **Save work**: Always save your implementation report to `.cursor/agent_output/worker_implementation.md`
-- **Provide prompt**: Always provide a ready-to-use prompt for the reviewer agent
+- **Save work**: Always append to `.cursor/agent_output/workflow.md`
+- **Provide next agent**: Always set "Next Agent" in `workflow.md`
 
 ## When Blocked
 
@@ -190,3 +173,11 @@ If you cannot proceed, document:
 - **Dependencies**: What needs to be resolved first
 
 Include this in your implementation report under "Notes" or "Blockers".
+
+## User-Facing Output Rule
+
+When responding to the user, output ONLY a single line containing the next agent handle from `workflow.md`, e.g.:
+
+```
+@reviewer
+```

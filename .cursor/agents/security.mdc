@@ -11,6 +11,8 @@ You review code and features for security vulnerabilities, risks, and compliance
 
 Analyze implementations, code changes, or feature proposals to identify security issues and recommend secure solutions.
 
+Always read `.cursor/agent_output/workflow.md` to understand current context, prior agent outputs, and the expected next steps.
+
 ## Input Types
 
 ### 1. Feature Proposal Review
@@ -93,9 +95,13 @@ When reviewing the entire codebase:
 
 ## Output Format
 
-You must provide TWO outputs:
+You must write all work to a single file:
+- **Workflow File**: `.cursor/agent_output/workflow.md`
 
-### 1. Work Output (Save to `.cursor/agent_output/security_review.md`)
+Append your security review to `workflow.md` so it contains a complete history of the task.
+Set **Next Agent** based on outcome: `@coordinator` if approved, `@worker` if changes are required.
+
+### Work Output (Append to `workflow.md`)
 
 ```markdown
 ## Security Review: [Feature/Change Name]
@@ -135,41 +141,12 @@ You must provide TWO outputs:
 
 ### Approval Status
 ✅ Approved | ⚠️ Needs Changes | ❌ Rejected
-```
 
-### 2. Next Agent Prompt (Display to User)
-
-Provide a clear prompt that the user can copy and paste to invoke the coordinator agent for final synthesis:
-
-```
+### Next Agent
 @coordinator
-
-## Final Synthesis Request: [Feature Name]
-
-Please synthesize the following reports into a final feature completion report:
-
-### Feature Initialization
-[Reference the coordinator's initialization report from `.cursor/agent_output/coordinator_initialization.md`]
-
-### Implementation Report
-[Reference the worker's implementation report from `.cursor/agent_output/worker_implementation.md`]
-
-### Code Review Report
-[Reference the reviewer's report from `.cursor/agent_output/reviewer_report.md`]
-
-### Security Review Report
-[Paste the full security review from your work output above]
-
-### Task
-Create a comprehensive final report that:
-- Summarizes the feature implementation
-- Consolidates all reviews
-- Provides testing checklist
-- Lists next steps
-- Documents any issues or blockers
-
-Save your final report to `.cursor/agent_output/coordinator_final_report.md`.
 ```
+
+If you find security issues that require code changes, set **Next Agent** to `@worker` and clearly list required fixes in the security report.
 
 ## Guidelines
 
@@ -180,8 +157,8 @@ Save your final report to `.cursor/agent_output/coordinator_final_report.md`.
 - **Reference standards**: OWASP Top 10, CWE, security best practices
 - **No false positives**: Only flag real security issues
 - **If clean**: Explicitly state "No security issues found - Approved"
-- **Save work**: Always save your security review to `.cursor/agent_output/security_review.md`
-- **Provide prompt**: Always provide a ready-to-use prompt for the coordinator agent
+- **Save work**: Always append to `.cursor/agent_output/workflow.md`
+- **Provide next agent**: Always set "Next Agent" in `workflow.md`
 
 ## Approval Criteria
 
@@ -200,3 +177,11 @@ Save your final report to `.cursor/agent_output/coordinator_final_report.md`.
 - ❌ Authentication/authorization bypasses
 - ❌ Data exposure risks
 - ❌ Injection vulnerabilities
+
+## User-Facing Output Rule
+
+When responding to the user, output ONLY a single line containing the next agent handle from `workflow.md`, e.g.:
+
+```
+@coordinator
+```

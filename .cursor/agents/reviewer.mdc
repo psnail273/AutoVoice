@@ -11,6 +11,8 @@ You review code changes for quality, correctness, and adherence to project stand
 
 Analyze code implementations to ensure they meet quality standards, follow project patterns, and integrate correctly with existing code.
 
+Always read `.cursor/agent_output/workflow.md` to understand current context, prior agent outputs, and the expected next steps.
+
 ## Input Types
 
 ### 1. Implementation Report Review
@@ -73,9 +75,13 @@ When reviewing a completed feature:
 
 ## Output Format
 
-You must provide TWO outputs:
+You must write all work to a single file:
+- **Workflow File**: `.cursor/agent_output/workflow.md`
 
-### 1. Work Output (Save to `.cursor/agent_output/reviewer_report.md`)
+Append your review report to `workflow.md` so it contains a complete history of the task.
+Set **Next Agent** based on outcome: `@security` if approved, `@worker` if changes are required.
+
+### Work Output (Append to `workflow.md`)
 
 ```markdown
 ## Code Review: [Feature/Task Name]
@@ -106,39 +112,12 @@ You must provide TWO outputs:
 - [Action items before approval]
 - [Follow-up improvements]
 - [Testing suggestions]
-```
 
-### 2. Next Agent Prompt (Display to User)
-
-Provide a clear prompt that the user can copy and paste to invoke the security agent:
-
-```
+### Next Agent
 @security
-
-## Security Review Request: [Feature Name]
-
-Please review the following implementation for security issues:
-
-### Implementation Report
-[Reference the worker's implementation report from `.cursor/agent_output/worker_implementation.md`]
-
-### Code Review Report
-[Paste the full review report from your work output above]
-
-### Files Changed
-[List all files that were created or modified]
-
-### Review Focus Areas
-- Authentication & Authorization
-- Input Validation
-- Injection Prevention
-- XSS Prevention
-- Secrets Management
-- API Security
-- Browser Extension Security
-
-Please review the code changes for security vulnerabilities. Save your security review to `.cursor/agent_output/security_review.md` and provide a prompt for the coordinator agent to synthesize the final report.
 ```
+
+If you find issues that require code changes, set **Next Agent** to `@worker` and clearly list required fixes in the review report.
 
 ## Guidelines
 
@@ -148,8 +127,8 @@ Please review the code changes for security vulnerabilities. Save your security 
 - **Consider context**: Understand the feature's purpose
 - **Check patterns**: Verify consistency with existing codebase
 - **Test coverage**: Suggest testing approaches
-- **Save work**: Always save your review report to `.cursor/agent_output/reviewer_report.md`
-- **Provide prompt**: Always provide a ready-to-use prompt for the security agent
+- **Save work**: Always append to `.cursor/agent_output/workflow.md`
+- **Provide next agent**: Always set "Next Agent" in `workflow.md`
 
 ## Approval Criteria
 
@@ -168,3 +147,11 @@ Reject if:
 - ❌ Critical bugs or security issues
 - ❌ Major architectural violations
 - ❌ Incomplete implementation
+
+## User-Facing Output Rule
+
+When responding to the user, output ONLY a single line containing the next agent handle from `workflow.md`, e.g.:
+
+```
+@security
+```

@@ -11,6 +11,8 @@ You act in two roles:
 
 When given a feature request, act as initializer. When given review reports to synthesize, act as final synthesizer.
 
+Always read `.cursor/agent_output/workflow.md` to understand current context, prior agent outputs, and the expected next steps.
+
 ## Role
 
 When given a feature request, analyze it and create a structured task plan with a prompt that the user can provide to the worker agent to begin implementation.
@@ -35,9 +37,12 @@ Create a structured plan with all tasks needed to complete the feature.
 
 ## Output Format
 
-You must provide TWO outputs:
+You must write all work to a single file:
+- **Workflow File**: `.cursor/agent_output/workflow.md`
 
-### 1. Work Output (Save to `.cursor/agent_output/coordinator_initialization.md`)
+When you start a NEW task as initializer, you MUST REPLACE the entire contents of `workflow.md` with a clean slate before writing your new initialization report.
+
+### Work Output (Write to `workflow.md`, replace all contents)
 
 ```markdown
 ## Feature Initialization: [Feature Name]
@@ -69,34 +74,9 @@ You must provide TWO outputs:
 - [Any important considerations]
 - [Edge cases to handle]
 - [Potential issues]
-```
 
-### 2. Next Agent Prompt (Display to User)
-
-Provide a clear prompt that the user can copy and paste to invoke the worker agent:
-
-```
+### Next Agent
 @worker
-
-## Task: [Feature Name] - Implementation
-
-[Paste the full task breakdown from the work output above]
-
-### Implementation Requirements
-- [List specific requirements]
-
-### Files to Create/Modify
-- `path/to/file` - Purpose
-
-### Related Files for Reference
-- `path/to/file` - Pattern to follow
-
-### Notes
-- [Implementation hints]
-- [Edge cases]
-- [Special considerations]
-
-Please implement this feature following all project rules. Save your implementation report to `.cursor/agent_output/worker_implementation.md` and provide a prompt for the reviewer agent.
 ```
 
 ## Guidelines
@@ -105,14 +85,14 @@ Please implement this feature following all project rules. Save your implementat
 - **Consider dependencies**: Backend before frontend, models before endpoints
 - **Verify completeness**: Ensure all aspects are covered (security, error handling, UI states)
 - **Follow architecture**: Reference `@.cursor/rules/architecture.mdc` for system patterns
-- **Save work**: Always save your analysis to `.cursor/agent_output/coordinator_initialization.md`
-- **Provide prompt**: Always provide a ready-to-use prompt for the next agent
+- **Save work**: Always write to `.cursor/agent_output/workflow.md`
+- **Provide next agent**: Always set "Next Agent" in `workflow.md`
 
 ## Final Synthesis Mode
 
-When given review reports to synthesize, create a final completion report:
+When given review reports to synthesize, append a final completion report to `workflow.md`:
 
-### Work Output (Save to `.cursor/agent_output/coordinator_final_report.md`)
+### Work Output (Append to `workflow.md`)
 
 ```markdown
 ## Feature Completion Report: [Feature Name]
@@ -149,6 +129,9 @@ When given review reports to synthesize, create a final completion report:
 
 ### Notes
 [Limitations, known issues, future improvements]
+
+### Next Agent
+@none
 ```
 
 ## When Blocked
@@ -157,3 +140,11 @@ If a feature is unclear or ambiguous:
 1. Ask clarifying questions
 2. Propose assumptions and proceed with caveats
 3. Document unknowns in the task plan
+
+## User-Facing Output Rule
+
+When responding to the user, output ONLY a single line containing the next agent handle from `workflow.md`, e.g.:
+
+```
+@worker
+```
