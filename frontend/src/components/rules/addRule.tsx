@@ -6,10 +6,10 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { createRule, type RuleResponse } from '@/lib/api';
+import type { RuleCreate } from '@/lib/api';
 
 interface AddRuleProps {
-  onSave: (rule: RuleResponse) => void;
+  onSave: (rule: RuleCreate) => Promise<void>;
   onCancel: () => void;
   preFillData?: {
     url: string;
@@ -123,14 +123,13 @@ export function AddRule({ onSave, onCancel, preFillData }: AddRuleProps) {
     const filteredIgnoreSelectors = ignoreSelectors.map((s) => s.trim()).filter(Boolean);
 
     try {
-      const newRule = await createRule({
+      await onSave({
         url_pattern: urlPattern.trim(),
         keep_selectors: filteredKeepSelectors,
         ignore_selectors: filteredIgnoreSelectors,
         enabled: true,
         auto_extract: true,
       });
-      onSave(newRule);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create rule');
     } finally {

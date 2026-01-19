@@ -6,9 +6,10 @@ import { Loader2, Play } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
-import { getRules, type RuleResponse } from '@/lib/api';
+import type { RuleCreate } from '@/lib/api';
 import { AddRule } from './addRule';
 import { useAudioController } from '@/hooks/use-audio-controller';
+import { useRules } from '@/hooks/use-rules';
 import PlaybackControls from '../playback/playbackControls';
 import type { PendingRuleData } from '@/lib/messages';
 
@@ -34,10 +35,8 @@ function matchesUrlPattern(pattern: string, url: string): boolean {
  * Fetches rules from the backend API and renders each as a card.
  */
 export default function Rules() {
-  const [rules, setRules] = useState<RuleResponse[]>([]);
+  const { rules, loading, error, addRule } = useRules();
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [preFillData, setPreFillData] = useState<{
     url: string;
@@ -66,22 +65,6 @@ export default function Rules() {
 
   useEffect(() => {
     /**
-     * Fetches rules for the current user from the API.
-     */
-    async function fetchRules() {
-      try {
-        setLoading(true);
-        const fetchedRules = await getRules();
-        setRules(fetchedRules);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load rules');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    /**
      * Fetches the current tab's URL.
      */
     async function fetchCurrentUrl() {
@@ -95,7 +78,6 @@ export default function Rules() {
       }
     }
 
-    fetchRules();
     fetchCurrentUrl();
   }, []);
 
@@ -143,10 +125,11 @@ export default function Rules() {
   }
 
   /**
-   * Handles successful rule creation by adding it to the list.
+   * Handles rule creation using the useRules hook.
+   * Creates the rule via API and updates both state and cache.
    */
-  function handleRuleSaved(newRule: RuleResponse) {
-    setRules([newRule, ...rules]);
+  async function handleSaveRule(rule: RuleCreate) {
+    await addRule(rule);
     setShowAddForm(false);
   }
 
@@ -214,7 +197,7 @@ export default function Rules() {
   }
 
   if (showAddForm) {
-    return <AddRule onSave={ handleRuleSaved } onCancel={ handleCancel } preFillData={ preFillData } />;
+    return <AddRule onSave={ handleSaveRule } onCancel={ handleCancel } preFillData={ preFillData } />;
   }
 
   return (

@@ -10,6 +10,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 let authValidationCache: { isValid: boolean; timestamp: number } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Rules cache key for browser storage
+const RULES_CACHE_KEY = 'cachedRules';
+
 interface ApiError {
   detail: string;
 }
@@ -202,11 +205,12 @@ export async function login(
 
 /**
  * Log out the current user.
- * Clears both token storage and auth validation cache.
+ * Clears token storage, auth validation cache, and rules cache.
  */
 export async function logout(): Promise<void> {
   authValidationCache = null;
   await removeToken();
+  await clearCachedRules();
 }
 
 /**
@@ -240,6 +244,46 @@ export async function isAuthenticated(): Promise<boolean> {
     authValidationCache = { isValid: false, timestamp: Date.now() };
     await removeToken();
     return false;
+  }
+}
+
+// ============ Rules Cache ============
+
+/**
+ * Get cached rules from browser storage.
+ */
+export async function getCachedRules(): Promise<RuleResponse[] | null> {
+  try {
+    const result = await browser.storage.local.get(RULES_CACHE_KEY);
+    if (result[RULES_CACHE_KEY] && Array.isArray(result[RULES_CACHE_KEY])) {
+      return result[RULES_CACHE_KEY] as RuleResponse[];
+    }
+    return null;
+  } catch (error) {
+    console.warn('[API] Failed to get cached rules:', error);
+    return null;
+  }
+}
+
+/**
+ * Save rules to browser storage cache.
+ */
+export async function setCachedRules(rules: RuleResponse[]): Promise<void> {
+  try {
+    await browser.storage.local.set({ [RULES_CACHE_KEY]: rules });
+  } catch (error) {
+    console.warn('[API] Failed to cache rules:', error);
+  }
+}
+
+/**
+ * Clear the rules cache from browser storage.
+ */
+export async function clearCachedRules(): Promise<void> {
+  try {
+    await browser.storage.local.remove(RULES_CACHE_KEY);
+  } catch (error) {
+    console.warn('[API] Failed to clear rules cache:', error);
   }
 }
 
