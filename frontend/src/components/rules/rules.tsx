@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
-import { Loader2, Play } from 'lucide-react';
+import { Loader2, Pencil, Play, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
@@ -168,6 +168,22 @@ export default function Rules() {
     }
   }
 
+  /**
+   * Placeholder handler for editing a rule.
+   * Will be implemented in Story 3.
+   */
+  function handleEditRule(ruleId: number) {
+    console.log(`Edit rule ${ruleId}`);
+  }
+
+  /**
+   * Placeholder handler for deleting a rule.
+   * Will be implemented in Story 2.
+   */
+  function handleDeleteRule(ruleId: number) {
+    console.log(`Delete rule ${ruleId}`);
+  }
+
   // Find the active rule that matches the current URL
   const activeRule = currentUrl
     ? rules.find((rule) => matchesUrlPattern(rule.url_pattern, currentUrl))
@@ -208,7 +224,29 @@ export default function Rules() {
         { activeRule ? (
           <Card className="w-full border-primary/50">
             <CardHeader className="py-2 px-4">
-              <CardTitle className="text-sm font-mono wrap-anywhere">{ activeRule.url_pattern }</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm font-mono wrap-anywhere flex-1">{ activeRule.url_pattern }</CardTitle>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={ () => handleEditRule(activeRule.id) }
+                    disabled={ loading }
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={ () => handleDeleteRule(activeRule.id) }
+                    disabled={ loading }
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             { isAudioFromActiveRule ? (
               // Show full playback controls when audio is from this rule
@@ -272,7 +310,29 @@ export default function Rules() {
           otherRules.map((rule) => (
             <Card key={ rule.id } className="w-full">
               <CardContent className="py-3">
-                <span className="text-sm font-mono wrap-anywhere">{ rule.url_pattern }</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-mono wrap-anywhere flex-1">{ rule.url_pattern }</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={ () => handleEditRule(rule.id) }
+                      disabled={ loading }
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={ () => handleDeleteRule(rule.id) }
+                      disabled={ loading }
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))
