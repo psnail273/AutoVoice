@@ -6,7 +6,7 @@ import { Loader2, Pencil, Play, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
-import type { RuleCreate } from '@/lib/api';
+import type { RuleCreate, RuleResponse, RuleUpdate } from '@/lib/api';
 import { AddRule } from './addRule';
 import { useAudioController } from '@/hooks/use-audio-controller';
 import { useRules } from '@/hooks/use-rules';
@@ -35,13 +35,16 @@ function matchesUrlPattern(pattern: string, url: string): boolean {
  * Fetches rules from the backend API and renders each as a card.
  */
 export default function Rules() {
-  const { rules, loading, error, addRule } = useRules();
+  const { rules, loading, error, addRule, deleteRule, updateRule } = useRules();
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [preFillData, setPreFillData] = useState<{
     url: string;
     selector: string;
   } | null>(null);
+  const [deletingRuleId, setDeletingRuleId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [editingRule, setEditingRule] = useState<RuleResponse | null>(null);
   const {
     audioState,
     activeAudioTabId,
@@ -169,19 +172,56 @@ export default function Rules() {
   }
 
   /**
-   * Placeholder handler for editing a rule.
-   * Will be implemented in Story 3.
+   * Opens the edit form for a rule.
+   * Finds the rule by ID and sets it as the editing rule.
    */
   function handleEditRule(ruleId: number) {
-    console.log(`Edit rule ${ruleId}`);
+    const ruleToEdit = rules.find((r) => r.id === ruleId);
+    if (ruleToEdit) {
+      setEditingRule(ruleToEdit);
+    }
   }
 
   /**
-   * Placeholder handler for deleting a rule.
-   * Will be implemented in Story 2.
+   * Handles updating an existing rule.
+   * Called from the AddRule component in edit mode.
    */
-  function handleDeleteRule(ruleId: number) {
-    console.log(`Delete rule ${ruleId}`);
+  async function handleUpdateRule(id: number, rule: RuleUpdate) {
+    await updateRule(id, rule);
+    setEditingRule(null);
+  }
+
+  /**
+   * Cancels editing and returns to the rules list.
+   */
+  function handleCancelEdit() {
+    setEditingRule(null);
+  }
+
+  /**
+   * Handles deleting a rule with confirmation dialog.
+   * Shows confirmation before deletion, handles errors, and updates UI.
+   */
+  async function handleDeleteRule(ruleId: number, urlPattern: string) {
+    // Clear any previous delete error
+    setDeleteError(null);
+
+    // Show confirmation dialog
+    const confirmed = confirm(`Are you sure you want to delete the rule for "${urlPattern}"?`);
+    if (!confirmed) {
+      return;
+    }
+
+    // Set loading state
+    setDeletingRuleId(ruleId);
+
+    try {
+      await deleteRule(ruleId);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete rule. Please try again.');
+    } finally {
+      setDeletingRuleId(null);
+    }
   }
 
   // Find the active rule that matches the current URL
@@ -216,8 +256,26 @@ export default function Rules() {
     return <AddRule onSave={ handleSaveRule } onCancel={ handleCancel } preFillData={ preFillData } />;
   }
 
+  if (editingRule) {
+    return (
+      <AddRule
+        onSave={ handleSaveRule }
+        onCancel={ handleCancelEdit }
+        initialRule={ editingRule }
+        onUpdate={ handleUpdateRule }
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 w-full">
+      { /* Delete Error Message */ }
+      { deleteError && (
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          { deleteError }
+        </div>
+      ) }
+
       { /* Active Rule Section */ }
       <div className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Active Rule</h3>
@@ -239,11 +297,15 @@ export default function Rules() {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onClick={ () => handleDeleteRule(activeRule.id) }
-                    disabled={ loading }
+                    onClick={ () => handleDeleteRule(activeRule.id, activeRule.url_pattern) }
+                    disabled={ loading || deletingRuleId === activeRule.id }
                     className="text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    { deletingRuleId === activeRule.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    ) }
                   </Button>
                 </div>
               </div>
@@ -325,11 +387,15 @@ export default function Rules() {
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      onClick={ () => handleDeleteRule(rule.id) }
-                      disabled={ loading }
+                      onClick={ () => handleDeleteRule(rule.id, rule.url_pattern) }
+                      disabled={ loading || deletingRuleId === rule.id }
                       className="text-muted-foreground hover:text-destructive"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      { deletingRuleId === rule.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      ) }
                     </Button>
                   </div>
                 </div>

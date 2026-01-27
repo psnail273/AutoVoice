@@ -6,7 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import type { RuleCreate } from '@/lib/api';
+import type { RuleCreate, RuleResponse, RuleUpdate } from '@/lib/api';
 
 interface AddRuleProps {
   onSave: (rule: RuleCreate) => Promise<void>;
@@ -15,24 +15,40 @@ interface AddRuleProps {
     url: string;
     selector: string;
   } | null;
+  /** When provided, the form operates in edit mode with pre-populated values */
+  initialRule?: RuleResponse | null;
+  /** Called when updating an existing rule (edit mode) */
+  onUpdate?: (id: number, rule: RuleUpdate) => Promise<void>;
 }
 
 /**
- * Form component for adding a new rule.
- * Auto-grabs the current website URL and allows configuring selectors.
+ * Form component for adding or editing a rule.
+ * In create mode: Auto-grabs the current website URL and allows configuring selectors.
+ * In edit mode: Pre-populates form with existing rule data.
  */
-export function AddRule({ onSave, onCancel, preFillData }: AddRuleProps) {
+export function AddRule({ onSave, onCancel, preFillData, initialRule, onUpdate }: AddRuleProps) {
   const [urlPattern, setUrlPattern] = useState('');
   const [keepSelectors, setKeepSelectors] = useState<string[]>(['']);
   const [ignoreSelectors, setIgnoreSelectors] = useState<string[]>(['']);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Determine if we're in edit mode
+  const isEditMode = Boolean(initialRule);
+
   useEffect(() => {
     /**
-     * Initializes the form with either pre-filled data or current tab URL.
+     * Initializes the form with existing rule data, pre-filled data, or current tab URL.
      */
     async function initializeForm() {
+      // If editing an existing rule, populate with its data
+      if (initialRule) {
+        setUrlPattern(initialRule.url_pattern);
+        setKeepSelectors(initialRule.keep_selectors.length > 0 ? initialRule.keep_selectors : ['']);
+        setIgnoreSelectors(initialRule.ignore_selectors.length > 0 ? initialRule.ignore_selectors : ['']);
+        return;
+      }
+
       // If pre-fill data provided (from context menu), use it
       if (preFillData) {
         setUrlPattern(preFillData.url);
@@ -52,7 +68,7 @@ export function AddRule({ onSave, onCancel, preFillData }: AddRuleProps) {
     }
 
     initializeForm();
-  }, [preFillData]);
+  }, [preFillData, initialRule]);
 
   /**
    * Updates a keep selector at the given index.
@@ -105,7 +121,7 @@ export function AddRule({ onSave, onCancel, preFillData }: AddRuleProps) {
   }
 
   /**
-   * Handles form submission to create a new rule.
+   * Handles form submission to create or update a rule.
    */
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -123,15 +139,25 @@ export function AddRule({ onSave, onCancel, preFillData }: AddRuleProps) {
     const filteredIgnoreSelectors = ignoreSelectors.map((s) => s.trim()).filter(Boolean);
 
     try {
-      await onSave({
-        url_pattern: urlPattern.trim(),
-        keep_selectors: filteredKeepSelectors,
-        ignore_selectors: filteredIgnoreSelectors,
-        enabled: true,
-        auto_extract: true,
-      });
+      if (isEditMode && initialRule && onUpdate) {
+        // Edit mode: update existing rule
+        await onUpdate(initialRule.id, {
+          url_pattern: urlPattern.trim(),
+          keep_selectors: filteredKeepSelectors,
+          ignore_selectors: filteredIgnoreSelectors,
+        });
+      } else {
+        // Create mode: save new rule
+        await onSave({
+          url_pattern: urlPattern.trim(),
+          keep_selectors: filteredKeepSelectors,
+          ignore_selectors: filteredIgnoreSelectors,
+          enabled: true,
+          auto_extract: true,
+        });
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create rule');
+      setError(err instanceof Error ? err.message : isEditMode ? 'Failed to update rule' : 'Failed to create rule');
     } finally {
       setIsLoading(false);
     }
@@ -140,7 +166,7 @@ export function AddRule({ onSave, onCancel, preFillData }: AddRuleProps) {
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Add New Rule</CardTitle>
+        <CardTitle className="text-lg">{ isEditMode ? 'Edit Rule' : 'Add New Rule' }</CardTitle>
       </CardHeader>
       <form onSubmit={ handleSubmit }>
         <CardContent className="space-y-4">
