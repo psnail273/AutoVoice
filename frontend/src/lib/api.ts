@@ -116,7 +116,9 @@ async function setToken(token: string): Promise<void> {
     console.warn('[API] Failed to access browser.storage:', error);
   }
 
+  // Clear caches to force fresh validation after token update
   currentUserCache = null;
+  authValidationCache = null;
 
   if (typeof localStorage !== 'undefined') {
     try {
