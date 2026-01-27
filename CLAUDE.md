@@ -4,20 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AutoVoice is a browser extension that provides text-to-speech services with user authentication and content extraction rules. It consists of two main parts:
+AutoVoice is a browser extension that converts web page content to speech using a custom TTS backend. Users can define "rules" that specify which parts of a page to read using CSS selectors, enabling targeted content extraction and audio generation.
 
-1. **Backend** (`backend/`): FastAPI server providing TTS, authentication, and rules management
-2. **Frontend** (`frontend/`): WXT-based browser extension with React UI
+- **Backend** (`backend/`): FastAPI server providing TTS, authentication, and rules management
+- **Frontend** (`frontend/`): WXT-based browser extension with React UI
 
 ## Backend (FastAPI + PostgreSQL)
 
-### Tech Stack
-- FastAPI with async/await
-- PostgreSQL (Neon) via SQLAlchemy 2.0 async + asyncpg
-- JWT authentication with bcrypt
-- Alembic for migrations
-
 ### Development Commands
+
+**Do not run `fastapi dev src/main.py`** - the user will manage the dev server themselves.
 
 ```bash
 # From backend/ directory
@@ -26,48 +22,36 @@ source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
 
 # Database migrations
-alembic upgrade head  # Apply migrations
+alembic upgrade head                              # Apply migrations
 alembic revision --autogenerate -m "Description"  # Create new migration
 
-# Development server
+# Development server (user-managed)
 fastapi dev src/main.py  # Runs on http://localhost:8000
 ```
 
-### Project Structure
+### Environment Variables
 
-Backend follows a layered architecture:
-- **`src/routers/`**: API endpoint handlers (auth.py, rules.py)
-- **`src/models/`**: SQLAlchemy ORM models (user.py, rule.py)
-- **`src/schemas/`**: Pydantic request/response schemas
-- **`src/services/`**: Business logic (auth.py - password hashing, JWT)
-- **`src/tts/`**: Text-to-speech modules (Kokoro TTS)
-- **`src/database.py`**: Async database session management
-- **`src/dependencies.py`**: FastAPI dependency injection
-- **`src/config.py`**: Environment configuration via pydantic-settings
-- **`src/main.py`**: Application entry point, CORS, router registration
+Backend requires `.env.local` in `backend/` directory:
+- `DATABASE_URL`: PostgreSQL connection string (with SSL)
+- `SECRET_KEY`: JWT secret (generate with `openssl rand -hex 32`)
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration (default: 1440)
+- `CORS_ORIGINS`: Comma-separated origins (or `*`)
+- `RESEND_KEY`: Resend API key for email service
+- `RESEND_DOMAIN`: Domain configured in Resend for sending emails
 
-### API Design Patterns
+### API Endpoints
 
-**HTTP Methods & Status Codes:**
-- Use appropriate HTTP methods (GET, POST, PUT, DELETE)
-- Return proper status codes (200, 201, 204, 400, 401, 404, etc.)
-- Use `Response` or `StreamingResponse` for binary data (audio, files)
-- Group related endpoints with router tags
-
-**Pydantic Request/Response Models:**
-```python
-from pydantic import BaseModel
-
-class MyRequest(BaseModel):
-    """Request body with validation."""
-    field: str
-    optional_field: str | None = None
-
-@router.post("/endpoint")
-async def my_endpoint(request: MyRequest):
-    # Pydantic auto-validates incoming data
-    return {"result": request.field}
-```
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/auth/signup` | POST | No | Create account, returns JWT |
+| `/auth/login` | POST | No | Authenticate, returns JWT |
+| `/auth/me` | GET | Yes | Get current user profile |
+| `/rules` | GET | Yes | List user's rules |
+| `/rules` | POST | Yes | Create new rule |
+| `/rules/{id}` | GET/PUT/DELETE | Yes | CRUD single rule |
+| `/text` | POST | No | Convert text to WAV (full file) |
+| `/stream` | POST | No | Stream text as MP3 chunks |
+| `/health` | GET | No | Health check |
 
 ### Database Patterns
 
@@ -81,58 +65,32 @@ from src.database import get_db
 
 @router.get("/items")
 async def get_items(db: AsyncSession = Depends(get_db)):
-    # Use async context manager for transaction safety
     result = await db.execute(select(Item))
     return result.scalars().all()
 ```
 
-**Database connection:**
-- Connection string in `DATABASE_URL` environment variable
 - Convert `postgres://` to `postgresql+asyncpg://` for async driver
-- Use `Depends(get_db)` to inject database sessions into endpoints
-- Define all models in `src/models/` directory
+- Use `Depends(get_db)` to inject database sessions
 
-### Environment Variables
+### Code Style (Python)
 
-Backend requires `.env.local` in `backend/` directory:
-- `DATABASE_URL`: PostgreSQL connection string (with SSL)
-- `SECRET_KEY`: JWT secret (generate with `openssl rand -hex 32`)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration (default: 1440)
-- `CORS_ORIGINS`: Comma-separated origins (or `*`)
-
-### API Architecture
-
-- **Authentication** (`/auth/*`): signup, login, /me endpoint
-- **Rules** (`/rules/*`): CRUD operations for content extraction rules
-- **TTS** (`/text`, `/stream`): Text-to-speech conversion (non-authenticated)
-- **Health** (`/health`): Health check
-
-Routes are organized in separate router files and registered with prefixes and tags in `main.py`.
-
-### Security Notes
-
-- Passwords hashed with bcrypt before storage
-- JWT tokens with 24-hour expiration
-- Users can only access their own rules (enforced in routers)
-- Database requires SSL connection
+- Follow PEP 8, use type hints for all function parameters and return values
+- Use `async def` for all endpoint handlers
+- Prefer f-strings for string formatting
+- Organize routes in `src/routers/`, register in `main.py` with prefixes and tags
 
 ## Frontend (WXT + React + TypeScript)
 
-### Tech Stack
-- WXT (Web Extension Tools framework)
-- React 19 with hooks
-- TypeScript
-- Tailwind CSS v4
-- shadcn/ui components (Radix UI primitives)
-
 ### Development Commands
+
+**Do not run `npm run dev` or `npm run start`** - the user will manage the dev server themselves.
 
 ```bash
 # From frontend/ directory
 npm install
 
-# Development
-npm run dev          # Chrome dev build (loads to .output/chrome-mv3-dev/)
+# Development (user-managed)
+npm run dev          # Chrome dev build
 npm run dev:firefox  # Firefox dev build
 
 # Production builds
@@ -147,34 +105,17 @@ npm run lint      # ESLint
 npm run lint:fix  # Auto-fix ESLint errors
 ```
 
-### Project Structure
+### Environment Variables
 
-WXT enforces specific directories:
-- **`src/entrypoints/`**: Extension entry points
-  - `popup/` - Extension popup (App.tsx, main.tsx, popup.css)
-  - `background.ts` - Service worker
-  - `content.ts` - Content script
-- **`src/components/`**: React components
-  - `auth/` - SignIn.tsx, SignUp.tsx
-  - `navMenu.tsx/` - Main navigation tabs
-  - `playback/` - Audio controls
-  - `rules/` - Rules management
-  - `options/` - Extension settings
-  - `ui/` - Reusable shadcn/ui components
-- **`src/hooks/`**: Custom React hooks
-  - `use-auth.tsx` - AuthProvider context
-  - `use-audio.tsx` - Audio playback
-- **`src/lib/`**: Utilities and API client
-  - `api.ts` - Backend API client
-  - `types.ts` - TypeScript type definitions
-  - `utils.ts` - Utility functions (cn helper)
+Frontend uses `.env` file (not committed):
+- `VITE_API_URL`: Backend URL (default: http://localhost:8000)
 
 ### Browser-Agnostic Development
 
 **CRITICAL**: Always use `browser.*` API (WebExtensions standard), NOT `chrome.*`:
 
 ```typescript
-// ✅ Correct - browser-agnostic
+// ✅ Correct
 import { browser } from 'wxt/browser';
 await browser.storage.local.set({ key: value });
 
@@ -182,118 +123,143 @@ await browser.storage.local.set({ key: value });
 chrome.storage.local.set({ key: value });
 ```
 
-WXT automatically polyfills `browser.*` for Chrome, Firefox, Edge, and Safari.
+### Code Style (TypeScript)
 
-### Authentication Architecture
-
-The auth system uses a context provider pattern:
-
-1. **`AuthProvider`** (`hooks/use-auth.tsx`): React context managing auth state
-2. JWT tokens stored in `browser.storage.local` (with localStorage fallback for dev)
-3. **API Client** (`lib/api.ts`): Handles token storage/retrieval, automatic token attachment
-4. Auth flow validates token on app load via `/auth/me` endpoint
-
-```typescript
-// API client auto-attaches stored token to requests
-const user = await getCurrentUser();  // Uses stored token
-await logout();  // Removes token from storage
-```
-
-### Styling System
-
-Uses **Mid-Century Modern** theme with warm tones:
-- Cream backgrounds
-- Mustard gold primary
-- Teal accents
-- Olive secondary
-- Light/dark mode support
-
-Theme defined in `src/entrypoints/popup/popup.css`. Use `cn()` helper for conditional Tailwind classes:
-
-```typescript
-import { cn } from '@/lib/utils';
-
-<div className={cn("base-class", conditionalClass && "conditional-class")} />
-```
-
-### Component Patterns
-
-**React Component Structure:**
-```typescript
-import { cn } from "@/lib/utils"
-
-interface MyComponentProps {
-  title: string
-  className?: string
-}
-
-export function MyComponent({ title, className }: MyComponentProps) {
-  return (
-    <div className={cn("p-4 rounded-lg", className)}>
-      <h2 className="text-lg font-semibold">{title}</h2>
-    </div>
-  )
-}
-```
-
-**Guidelines:**
-- Use functional components with hooks only
-- Keep components small and focused
-- Extract reusable logic into custom hooks (in `src/hooks/`)
-- Define explicit TypeScript types for all props
+- Define explicit types, avoid `any`
 - Use interfaces for object shapes, types for unions/primitives
-- Avoid `any` - use proper types
-- Follow shadcn/ui patterns for new components
-- Import UI components from `@/components/ui/`
-- Use Tailwind utility classes directly in JSX
-- Only add necessary Tailwind classes - keep it simple
+- Use `cn()` helper (from `@/lib/utils`) for conditional Tailwind classes
+- Use `@/` path aliases for imports
+- Follow shadcn/ui patterns, import from `@/components/ui/`
 
-## Code Style Guidelines
+## Architecture
 
-### Backend (Python)
-- **Follow PEP 8** conventions
-- **Type hints**: Use for all function parameters and return values
-- **Async functions**: Use `async def` for all endpoint handlers
-- **String formatting**: Prefer f-strings over `.format()` or `%`
-- **Docstrings**: Add to all functions explaining purpose and parameters
-- **Router organization**: Organize routes in separate files under `src/routers/`
-- **Router registration**: Register in `main.py` with appropriate prefixes and tags
+### Extension Entry Points
 
-### Frontend (TypeScript)
-- **Type safety**: Define explicit types, avoid `any`
-- **Interfaces vs types**: Use interfaces for object shapes, types for unions/primitives
-- **Components**: Functional components with hooks only
-- **Styling**: Use `cn()` helper for conditional Tailwind classes
-- **Browser APIs**: Import from `wxt/browser` for type safety and cross-browser support
-- **Path aliases**: Use `@/` for imports (configured in `wxt.config.ts`)
+| File | Context | Purpose |
+|------|---------|---------|
+| `src/entrypoints/popup/App.tsx` | Popup | Main UI (auth, rules, playback controls) |
+| `src/entrypoints/background.ts` | Background | Audio stream proxy, cross-tab coordination, context menus |
+| `src/entrypoints/content.ts` | Content | DOM interaction, text extraction, audio playback |
 
-### General Principles
+### Text-to-Speech Flow
 
-**Code Quality:**
-- Write clear, readable code with meaningful variable and function names
-- Keep functions focused and single-purpose
-- Add comments only when the "why" isn't obvious from the code
-- Prefer explicit over implicit behavior
+```
+┌──────────┐  1. loadAndPlay()   ┌────────────┐
+│  Popup   │ ──────────────────► │ Background │
+└──────────┘                     └────────────┘
+                                       │
+                                       │ 2. AUDIO_LOAD_COMMAND
+                                       ▼
+                                ┌──────────────┐
+                                │Content Script│
+                                └──────────────┘
+                                       │
+     3. EXTRACT_TEXT                   │
+     (get page content)                │
+                                       ▼
+                                ┌──────────────┐
+                                │  Page DOM    │
+                                │ (selectors)  │
+                                └──────────────┘
+                                       │
+                                       │ 4. extracted text
+                                       ▼
+┌──────────────┐  5. port: start  ┌────────────┐
+│Content Script│ ───────────────► │ Background │
+│(AudioPlayer) │                  │  (proxy)   │
+└──────────────┘                  └────────────┘
+                                       │
+                                       │ 6. POST /stream
+                                       ▼
+                                 ┌─────────┐
+                                 │ Backend │
+                                 │  (TTS)  │
+                                 └─────────┘
+                                       │
+                                       │ 7. MP3 chunks
+                                       ▼
+┌──────────────┐  8. port: chunk  ┌────────────┐
+│Content Script│ ◄─────────────── │ Background │
+│(MediaSource) │                  └────────────┘
+└──────────────┘
+       │
+       │ 9. AUDIO_STATE_UPDATE
+       ▼
+┌──────────────┐
+│   Popup      │ (updates UI)
+└──────────────┘
+```
 
-**Git & Commits:**
-- Write descriptive commit messages
-- Keep commits atomic and focused on a single change
+**Why Background Proxies Audio**: Content scripts cannot directly fetch from the backend due to CORS restrictions. The background script acts as a proxy: content script connects via `browser.runtime.connect()`, background fetches from `/stream` endpoint and forwards chunks through the port.
 
-**Documentation:**
-- Document public APIs and complex logic
-- Keep README files up to date when adding new features
+### Rules System
 
-**Error Handling:**
-- Handle errors gracefully with meaningful messages
-- Log errors appropriately for debugging
-- Avoid exposing sensitive information in error messages
+Rules define how to extract content from specific websites:
 
-**Security (CRITICAL):**
-- Never hardcode secrets, API keys, or credentials - use environment variables
-- Sanitize and validate all user input before processing
-- Use parameterized queries to prevent SQL injection
-- Avoid exposing sensitive information in error messages or logs
-- Apply principle of least privilege for permissions and access
-- Keep dependencies updated to patch known vulnerabilities
-- Review code changes for potential security issues before committing
-- Always consider security implications when making any change
+```typescript
+interface Rule {
+  url_pattern: string;      // e.g., "https://example.com/*"
+  keep_selectors: string[]; // CSS selectors to extract
+  ignore_selectors: string[]; // CSS selectors to exclude
+  enabled: boolean;
+  auto_extract: boolean;
+}
+```
+
+**Extraction Algorithm** (in `content.ts`):
+1. If `keep_selectors` provided, query those elements
+2. Clone each element (avoid DOM mutation)
+3. Remove any `ignore_selectors` from clones
+4. Extract and combine `textContent`
+5. Clean whitespace
+
+### Message Types
+
+All messages defined in `src/lib/messages.ts`:
+
+| Message Type | Direction | Purpose |
+|--------------|-----------|---------|
+| `GET_SELECTOR_FOR_SELECTION` | Background → Content | Get CSS selector for right-clicked element |
+| `EXTRACT_TEXT` | Popup → Content | Extract text using rule selectors |
+| `AUDIO_LOAD` | Any → Content | Load and play audio from text |
+| `AUDIO_PLAY/PAUSE/STOP` | Any → Content | Playback control |
+| `AUDIO_STATE_UPDATE` | Content → Background/Popup | Broadcast current state |
+| `AUDIO_COMMAND` | Popup → Background | Route command to active audio tab |
+| `AUDIO_LOAD_COMMAND` | Popup → Background | Load audio on specific tab |
+
+### Storage Keys
+
+Browser extension storage (`browser.storage.local`):
+
+| Key | Purpose |
+|-----|---------|
+| `authToken` | JWT access token |
+| `cachedRules` | Offline rules cache |
+| `pendingRule` | Pre-fill data for AddRule form |
+| `audioPlaybackState` | Persisted audio state |
+
+## Adding New Features
+
+### Adding a New API Endpoint
+
+1. Create/update router in `backend/src/routers/`
+2. Add Pydantic schemas in `backend/src/schemas/`
+3. Register router in `backend/src/main.py` if new file
+4. Add API function in `frontend/src/lib/api.ts`
+5. Create/update React hook if stateful
+
+### Adding a New Extension Message
+
+1. Define message interface in `frontend/src/lib/messages.ts`
+2. Add to `ExtensionMessage` union type
+3. Handle in `background.ts` and/or `content.ts`
+4. Use from popup via `browser.runtime.sendMessage()`
+
+### Adding a New Database Model
+
+1. Create model in `backend/src/models/`
+2. Add relationship to existing models if needed
+3. Create Alembic migration: `alembic revision --autogenerate -m "description"`
+4. Run migration: `alembic upgrade head`
+5. Create schemas in `backend/src/schemas/`
+6. Create router in `backend/src/routers/`
