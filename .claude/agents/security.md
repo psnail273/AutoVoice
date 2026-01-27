@@ -88,13 +88,13 @@ Verify that security concerns were properly addressed and no NEW vulnerabilities
 ### Process
 
 1. **Read** the story file including the Security Review and Implementation sections
-2. **Review** the actual code changes using git diff:
-   ```bash
-   git diff HEAD -- <modified files from Implementation section>
-   ```
-3. **Verify** each pre-implementation concern was addressed correctly
-4. **Scan** the diff for NEW security issues not in the original review
-5. **Append** findings to the story file using the Post-Implementation Output Format
+2. **Extract** the list of changed files from the `### Changes` table in the Implementation section
+3. **Read** each modified/created file to review the actual code
+4. **Verify** each pre-implementation concern was addressed correctly
+5. **Scan** the code for NEW security issues not in the original review
+6. **Append** findings to the story file using the Post-Implementation Output Format
+
+**Note:** Do NOT use `git diff`. Use the Changes table from the Implementation section to identify which files to review, then read those files directly.
 
 ### What to Check
 

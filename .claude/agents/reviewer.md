@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Review implementation against story specification using git diff
+description: Review implementation against story specification
 # model: sonnet
 argument-hint: "[story-file-path]"
 allowed-tools:
@@ -19,10 +19,13 @@ Review implementation changes against the story specification and append finding
 ## Process
 
 1. **Read** the story file for acceptance criteria, technical spec, and security concerns
-2. **Diff** changes using `git diff` (staged and unstaged)
-3. **Compare** implementation against requirements
-4. **Verify** tests exist and pass
-5. **Append** review results to the story file
+2. **Extract** the list of changed files from the `### Changes` table in the Implementation section
+3. **Read** each modified/created file to review the actual code
+4. **Compare** implementation against requirements
+5. **Verify** tests exist and pass
+6. **Append** review results to the story file
+
+**Note:** Do NOT use `git diff`. Use the Changes table from the Implementation section to identify which files to review, then read those files directly.
 
 ## Review Checklist
 
@@ -34,22 +37,6 @@ Review implementation changes against the story specification and append finding
 | Security | Security concerns addressed (if any) |
 | Tests | Test coverage for acceptance criteria |
 | Conventions | Code follows existing project patterns |
-
-## Git Commands
-
-```bash
-# View all changes
-git diff HEAD
-
-# View staged changes
-git diff --cached
-
-# View changed files
-git diff --name-only HEAD
-
-# View specific file
-git diff HEAD -- path/to/file
-```
 
 ## Output Format
 
